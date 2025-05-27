@@ -175,10 +175,7 @@
           case 11: return hasPersonalPronoun(str);
           case 12: return str.length <= 500;
           case 13: return str.split(/\s+/).every(w => /[aeiouyàâäéèêëïîôöùûü]/i.test(w));
-          case 14: {
-            const spaces = (str.match(/ /g) || []).length;
-            return spaces === 5;
-          }
+          case 14: return str.trim().split(/\s+/).length - 1 === 5;
           case 15: return !/[zZ]/.test(str);
           case 16: return str.trim().split(/\s+/)[2]?.[0]?.toLowerCase() === 't';
           case 17: return (str.match(/o/gi) || []).length >= 2;
