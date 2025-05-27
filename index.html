@@ -2,265 +2,114 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Jeu de mot de passe cryptique</title>
+  <title>Jeu du mot de passe impossible</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #0f0f23;
       color: #f2f2f2;
       padding: 20px;
-      line-height: 1.6;
-      transition: background-color 0.3s ease;
     }
     .container {
       max-width: 700px;
       margin: auto;
     }
-    input {
+    input, button {
       width: 100%;
       padding: 12px;
       font-size: 1rem;
       margin-top: 10px;
     }
     button {
-      padding: 10px 20px;
-      margin-top: 10px;
-      font-size: 1rem;
       background: #1f8a70;
       color: white;
       border: none;
       cursor: pointer;
     }
-    .success {
-      color: #4caf50;
-    }
-    .error {
-      color: #f44336;
-    }
-    .success-flash {
-      box-shadow: 0 0 20px 5px #4caf50 inset;
-    }
-    .error-flash {
-      animation: shake 0.3s, redflash 0.3s;
-    }
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      20%, 60% { transform: translateX(-10px); }
-      40%, 80% { transform: translateX(10px); }
-    }
-    @keyframes redflash {
-      0% { background-color: #330000; }
-      100% { background-color: #0f0f23; }
-    }
-    ul {
-      padding-left: 20px;
-    }
-    .intro {
-      background: #1c1c3c;
-      padding: 15px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-    }
+    .success { color: #4caf50; }
+    .error { color: #f44336; }
+    ul { padding-left: 20px; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🔐 Jeu de mot de passe cryptique</h1>
-    <div class="intro">
-      <p>Bienvenue ! Ce jeu te propose de deviner une phrase secrète en validant progressivement une série de règles.</p>
-      <p>À chaque étape, une nouvelle contrainte s’ajoute. Tape ta réponse, puis clique sur <strong>Valider</strong>. Si la règle est respectée, tu passes à la suivante !</p>
-      <p>Le but final est d’écrire exactement : <em>Félicitation, je t'offre un abonnement Médiapart.</em></p>
-    </div>
+    <h1>🧠 Le Mot de Passe Impossible</h1>
+    <h2>Respecte toutes les règles pour trouver LA bonne phrase !</h2>
 
-    <div id="rulesContainer">
-      <h2>🧩 Règle en cours :</h2>
-      <ul id="rulesList"></ul>
-      <h2>✅ Règles validées :</h2>
-      <ul id="completedList"></ul>
-    </div>
+    <h3>Règles à respecter :</h3>
+    <ul id="rulesList"></ul>
 
-    <input id="answerInput" type="text" placeholder="Tape ta réponse ici...">
+    <input id="answerInput" type="text" placeholder="Tape ta proposition ici...">
     <button id="submitBtn">Valider</button>
 
     <p id="message"></p>
     <p id="stats"></p>
   </div>
 
-  <audio id="correctSound" src="https://www.soundjay.com/buttons/sounds/button-3.mp3"></audio>
-  <audio id="errorSound" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
-
   <script>
-    (() => {
-      const rules = [
-        "Commence par une majuscule.",
-        "Contient une apostrophe.",
-        "Contient une virgule.",
-        "Contient exactement 6 mots.",
-        "Le premier mot fait au moins 8 lettres.",
-        "Contient au moins 3 lettres accentuées (même accent possible).",
-        "Le dernier mot commence par la lettre M.",
-        "Le dernier mot fait au moins 9 lettres.",
-        "Contient une contraction (ex: t'offre, j'aime, etc.).",
-        "Contient deux lettres identiques côte à côte au milieu du mot.",
-        "Se termine par la lettre T.",
-        "Contient un pronom personnel (je, tu, il...).",
-        "Fait moins de 500 caractères.",
-        "Chaque mot contient au moins une voyelle.",
-        "Contient exactement 5 espaces.",
-        "Ne contient pas la lettre Z.",
-        "Le troisième mot commence par un T.",
-        "Contient au moins deux lettres 'o'.",
-        "Le deuxième mot est plus court que le premier.",
-        "Contient le mot 'un'.",
-        "Le dernier mot contient au moins 3 voyelles.",
-        "Contient un accent circonflexe (â, ê, î, ô, û).",
-        "Ne commence ni ne finit par un espace.",
-        "L’avant-dernier mot commence par un A.",
-        "Le mot juste après la virgule commence par un J.",
-        "C’est exactement : Félicitation, je t'offre un abonnement Médiapart."
-      ];
+    const rules = [
+      {text: "Commence par une majuscule.", test: str => /^[A-ZÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/.test(str)},
+      {text: "Contient exactement 6 mots.", test: str => str.trim().split(/\s+/).length === 6},
+      {text: "Contient une virgule.", test: str => /,/.test(str)},
+      {text: "Contient un pronom personnel (je, tu, il...).", test: str => /\b(je|tu|il|elle|on|nous|vous|ils|elles)\b/i.test(str)},
+      {text: "Contient une contraction (ex: t'offre, j'aime...).", test: str => /\b(j'|t'|l'|n'|s')\w+/i.test(str)},
+      {text: "Contient au moins 3 lettres accentuées.", test: str => [...str].filter(c => "àâäéèêëïîôöùûüç".includes(c.toLowerCase())).length >= 3},
+      {text: "Le mot juste après la virgule commence par un J.", test: str => str.split(',')[1]?.trim()?.startsWith('j') || false},
+      {text: "Le mot 'abonnement' est présent mais n'est pas le dernier mot.", test: str => str.includes("abonnement") && !str.trim().endsWith("abonnement.")},
+      {text: "Le mot final commence par un M majuscule.", test: str => str.trim().split(/\s+/).pop()?.startsWith("M")},
+      {text: "La phrase exacte est : Félicitation, je t'offre un abonnement Médiapart.", test: str => str === "Félicitation, je t'offre un abonnement Médiapart."}
+    ];
 
-      const finalPhrase = "Félicitation, je t'offre un abonnement Médiapart.";
+    let step = 0, attempts = 0;
+    const startTime = Date.now();
 
-      let step = 0;
-      let attempts = 0;
-      const startTime = Date.now();
+    const answerInput = document.getElementById("answerInput");
+    const submitBtn = document.getElementById("submitBtn");
+    const messageDiv = document.getElementById("message");
+    const rulesList = document.getElementById("rulesList");
+    const statsDiv = document.getElementById("stats");
 
-      const answerInput = document.getElementById("answerInput");
-      const submitBtn = document.getElementById("submitBtn");
-      const messageDiv = document.getElementById("message");
-      const rulesList = document.getElementById("rulesList");
-      const completedList = document.getElementById("completedList");
-      const statsDiv = document.getElementById("stats");
-      const correctSound = document.getElementById("correctSound");
-      const errorSound = document.getElementById("errorSound");
+    function showRules() {
+      rulesList.innerHTML = "";
+      for (let i = 0; i <= step; i++) {
+        const li = document.createElement("li");
+        li.textContent = rules[i].text;
+        rulesList.appendChild(li);
+      }
+    }
 
-      function countWords(str) {
-        return str.trim().split(/\s+/).length;
-      }
-      function firstWord(str) {
-        return str.trim().split(/\s+/)[0] || "";
-      }
-      function lastWord(str) {
-        const words = str.trim().split(/\s+/);
-        return words[words.length - 1] || "";
-      }
-      function countAccents(str) {
-        const accents = "àâäéèêëïîôöùûüç";
-        return [...str].filter(c => accents.includes(c.toLowerCase())).length;
-      }
-      function firstLetterIsUpper(str) {
-        return /^[A-ZÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/.test(str);
-      }
-      function containsApostrophe(str) {
-        return /'/.test(str);
-      }
-      function containsComma(str) {
-        return /,/.test(str);
-      }
-      function hasContraction(str) {
-        return /\b(j'|t'|l'|n'|s')\w+/i.test(str);
-      }
-      function hasDoubleLetterMiddle(str) {
-        return /\B(\w)\1\B/.test(str);
-      }
-      function endsWithLetterT(str) {
-        return /t\.?$/.test(str);
-      }
-      function hasPersonalPronoun(str) {
-        return /\b(je|tu|il|elle|on|nous|vous|ils|elles)\b/i.test(str);
-      }
-      function checkRule(step, str) {
-        str = str.trim();
-        switch (step) {
-          case 0: return firstLetterIsUpper(str);
-          case 1: return containsApostrophe(str);
-          case 2: return containsComma(str);
-          case 3: return countWords(str) === 6;
-          case 4: return firstWord(str).length >= 8;
-          case 5: return countAccents(str) >= 3;
-          case 6: return lastWord(str)[0]?.toLowerCase() === 'm';
-          case 7: return lastWord(str).length >= 9;
-          case 8: return hasContraction(str);
-          case 9: return hasDoubleLetterMiddle(str);
-          case 10: return endsWithLetterT(str);
-          case 11: return hasPersonalPronoun(str);
-          case 12: return str.length <= 500;
-          case 13: return str.split(/\s+/).every(w => /[aeiouyàâäéèêëïîôöùûü]/i.test(w));
-          case 14: return str.trim().split(/\s+/).length - 1 === 5;
-          case 15: return !/[zZ]/.test(str);
-          case 16: return str.trim().split(/\s+/)[2]?.[0]?.toLowerCase() === 't';
-          case 17: return (str.match(/o/gi) || []).length >= 2;
-          case 18: {
-            const words = str.trim().split(/\s+/);
-            return words[1]?.length < words[0]?.length;
-          }
-          case 19: return /\bun\b/.test(str);
-          case 20: return (lastWord(str).match(/[aeiouyàâäéèêëïîôöùûü]/gi) || []).length >= 3;
-          case 21: return /[âêîôû]/.test(str);
-          case 22: return !/^\s|\s$/.test(str);
-          case 23: {
-            const words = str.trim().split(/\s+/);
-            return words[words.length - 2]?.[0]?.toLowerCase() === 'a';
-          }
-          case 24: {
-            const afterComma = str.split(',')[1]?.trim().split(/\s+/)[0];
-            return afterComma?.[0]?.toLowerCase() === 'j';
-          }
-          case 25: return str === finalPhrase;
-          default: return false;
-        }
-      }
+    submitBtn.addEventListener("click", () => {
+      const input = answerInput.value.trim();
+      if (!input) return;
 
-      function nextRule() {
-        if (step >= rules.length) {
-          rulesList.innerHTML = "<li><strong>🎉 Toutes les règles ont été validées !</strong></li>";
-          messageDiv.textContent = "Bravo ! Tu as gagné 🎉";
+      attempts++;
+
+      const allPassed = rules.slice(0, step + 1).every(rule => rule.test(input));
+
+      if (allPassed) {
+        if (step < rules.length - 1) {
+          messageDiv.textContent = "✅ Bien joué, règle validée !";
+          messageDiv.className = "success";
+          step++;
+          showRules();
+        } else {
+          messageDiv.textContent = "🎉 Félicitations ! Tu as trouvé la phrase parfaite.";
           messageDiv.className = "success";
           submitBtn.disabled = true;
-          return;
         }
-        rulesList.innerHTML = `<li>${rules[step]}</li>`;
+      } else {
+        messageDiv.textContent = "❌ Oups, ta phrase ne respecte pas toutes les règles.";
+        messageDiv.className = "error";
       }
 
-      submitBtn.addEventListener("click", () => {
-        const input = answerInput.value.trim();
-        if (!input) return;
+      statsDiv.textContent = `Tentatives : ${attempts} | Temps écoulé : ${Math.floor((Date.now() - startTime) / 1000)} sec`;
+    });
 
-        attempts++;
+    answerInput.addEventListener("keypress", e => {
+      if (e.key === "Enter") submitBtn.click();
+    });
 
-        if (checkRule(step, input)) {
-          correctSound.play();
-          messageDiv.textContent = "✅ Règle validée !";
-          messageDiv.className = "success";
-          document.body.classList.add("success-flash");
-
-          const validated = document.createElement("li");
-          validated.textContent = rules[step];
-          completedList.appendChild(validated);
-
-          step++;
-          nextRule();
-        } else {
-          errorSound.play();
-          messageDiv.textContent = "❌ Essaie encore, ce n'est pas encore bon.";
-          messageDiv.className = "error";
-          document.body.classList.add("error-flash");
-        }
-
-        setTimeout(() => {
-          document.body.classList.remove("success-flash", "error-flash");
-        }, 800);
-
-        statsDiv.textContent = `Tentatives : ${attempts} | Temps écoulé : ${Math.floor((Date.now() - startTime) / 1000)} sec`;
-      });
-
-      answerInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") submitBtn.click();
-      });
-
-      nextRule();
-    })();
+    showRules();
   </script>
 </body>
 </html>
