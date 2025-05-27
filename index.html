@@ -1,101 +1,201 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <title>The Compliment Game</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      padding: 30px;
-    }
-    .form-step {
-      background: white;
-      padding: 20px;
-      margin-bottom: 20px;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    input {
-      padding: 10px;
-      width: 100%;
-      margin-top: 5px;
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-    }
-    .hidden {
-      display: none;
-    }
-    button {
-      padding: 10px 20px;
-      background: #d60000;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Jeu mot de passe progressif (25 règles)</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 600px; margin: 2em auto; }
+  input { width: 100%; padding: 0.5em; font-size: 1.2em; }
+  button { margin-top: 1em; padding: 0.7em 1.2em; font-size: 1.1em; }
+  .success { color: green; margin-top: 1em; }
+  .error { color: red; margin-top: 1em; }
+  .rule { font-style: italic; margin-top: 1em; }
+</style>
 </head>
 <body>
 
-  <h1>The Compliment Game</h1>
-  <p>Remplis les champs pour composer la plus belle des phrases…</p>
+<h2>Jeu du mot de passe progressif (25 règles)</h2>
+<p>Construis la phrase finale en respectant chaque contrainte, une par une.</p>
 
-  <form id="giftForm">
-    <div class="form-step">
-      <label>1. Entre un mot qui célèbre une réussite :</label>
-      <input type="text" id="word1" required />
-    </div>
+<div id="rule" class="rule"></div>
 
-    <div class="form-step">
-      <label>2. Ajoute une virgule :</label>
-      <input type="text" id="punct1" placeholder="," required />
-    </div>
+<input type="text" id="answer" placeholder="Ta réponse ici" autofocus autocomplete="off" />
+<button id="submitBtn">Valider</button>
 
-    <div class="form-step">
-      <label>3. Écris "je" :</label>
-      <input type="text" id="word2" required />
-    </div>
+<div id="message"></div>
 
-    <div class="form-step">
-      <label>4. Verbe d'action positive :</label>
-      <input type="text" id="verb" required />
-    </div>
+<script>
+  const finalPhrase = "Félicitations, je t'offre un abonnement Médiapart.";
 
-    <div class="form-step">
-      <label>5. Écris "un abonnement" :</label>
-      <input type="text" id="abonnement" required />
-    </div>
+  const rules = [
+    "La réponse commence par une majuscule.",
+    "La réponse contient une virgule.",
+    "La réponse contient le mot entier « je ».",
+    "La réponse contient la contraction « t'offre » avec apostrophe.",
+    "La réponse contient le mot « un ».",
+    "La réponse contient le mot « abonnement ».",
+    "La réponse contient le mot « Médiapart » avec majuscule et accent.",
+    "La phrase finit par un point.",
+    "La phrase comporte exactement 7 mots.",
+    "La phrase comporte exactement 38 caractères (espaces compris).",
+    "La réponse commence par « Félicitations ».",
+    "La virgule est juste après « Félicitations ».",
+    "Il y a exactement 6 espaces dans la phrase.",
+    "Le mot « je » est avant le mot « t'offre ».",
+    "Le mot « abonnement » est avant le mot « Médiapart ».",
+    "Le mot « t'offre » est précédé par le mot « je ».",
+    "Le mot « Médiapart » est le dernier mot avant le point.",
+    "La phrase contient un apostrophe (').",
+    "Le mot « je » est écrit en minuscules.",
+    "La première lettre de chaque mot est soit une majuscule (pour « Félicitations » et « Médiapart ») ou une minuscule.",
+    "La phrase ne contient aucun autre signe de ponctuation que la virgule et le point final.",
+    "La phrase ne contient pas de double espace.",
+    "La phrase ne contient pas le mot « offre » tout seul (doit être « t'offre »).",
+    "La phrase est sensible à la casse (respect exact des majuscules/minuscules).",
+    "La réponse est strictement égale à :<br><strong>Félicitations, je t'offre un abonnement Médiapart.</strong>"
+  ];
 
-    <div class="form-step">
-      <label>6. Écris "Mediapart !" :</label>
-      <input type="text" id="media" required />
-    </div>
+  let step = 0;
 
-    <button type="submit">Voir la phrase complète</button>
-  </form>
+  const ruleDiv = document.getElementById('rule');
+  const answerInput = document.getElementById('answer');
+  const submitBtn = document.getElementById('submitBtn');
+  const messageDiv = document.getElementById('message');
 
-  <div id="result" class="hidden">
-    <h2>Résultat :</h2>
-    <p id="finalPhrase"></p>
-  </div>
+  function showRule() {
+    ruleDiv.innerHTML = `Règle #${step + 1} : ${rules[step]}`;
+    messageDiv.textContent = "";
+    answerInput.value = "";
+    answerInput.focus();
+  }
 
-  <script>
-    document.getElementById("giftForm").addEventListener("submit", function(event) {
-      event.preventDefault();
-      const word1 = document.getElementById("word1").value.trim();
-      const punct1 = document.getElementById("punct1").value.trim();
-      const word2 = document.getElementById("word2").value.trim();
-      const verb = document.getElementById("verb").value.trim();
-      const abonnement = document.getElementById("abonnement").value.trim();
-      const media = document.getElementById("media").value.trim();
+  function countWords(str) {
+    return str.trim().split(/\s+/).length;
+  }
 
-      const phrase = `${word1}${punct1} ${word2} ${verb} ${abonnement} ${media}`;
-      document.getElementById("finalPhrase").textContent = phrase;
-      document.getElementById("result").classList.remove("hidden");
-    });
-  </script>
+  function checkCapitalization(word, isFirstOrLast=false) {
+    if (isFirstOrLast) {
+      // Doit commencer par majuscule
+      return /^[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ]/.test(word);
+    } else {
+      // Doit commencer par minuscule
+      return /^[a-zàâéèêëîïôùûüç]/.test(word);
+    }
+  }
+
+  function checkAnswer(answer) {
+    switch(step) {
+      case 0:
+        // Commence par une majuscule
+        return /^[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ]/.test(answer);
+      case 1:
+        // Contient une virgule
+        return answer.includes(',');
+      case 2:
+        // Contient le mot 'je' (mot entier)
+        return /\bje\b/.test(answer);
+      case 3:
+        // Contient "t'offre"
+        return answer.includes("t'offre");
+      case 4:
+        // Contient le mot 'un'
+        return /\bun\b/.test(answer);
+      case 5:
+        // Contient 'abonnement'
+        return answer.includes('abonnement');
+      case 6:
+        // Contient 'Médiapart' (majuscule et accent)
+        return answer.includes('Médiapart');
+      case 7:
+        // Finit par un point
+        return answer.endsWith('.');
+      case 8:
+        // 7 mots exactement
+        return countWords(answer) === 7;
+      case 9:
+        // 38 caractères (espaces compris)
+        return answer.length === 38;
+      case 10:
+        // Commence par 'Félicitations'
+        return answer.startsWith('Félicitations');
+      case 11:
+        // Virgule juste après 'Félicitations'
+        return answer.indexOf(',') === 'Félicitations'.length;
+      case 12:
+        // 6 espaces dans la phrase
+        return (answer.match(/ /g) || []).length === 6;
+      case 13:
+        // 'je' avant 't'offre'
+        return answer.indexOf('je') < answer.indexOf("t'offre");
+      case 14:
+        // 'abonnement' avant 'Médiapart'
+        return answer.indexOf('abonnement') < answer.indexOf('Médiapart');
+      case 15:
+        // 't'offre' précédé par 'je' (mots consécutifs)
+        // On cherche "je t'offre"
+        return /\bje t'offre\b/.test(answer);
+      case 16:
+        // 'Médiapart' est dernier mot avant le point
+        // On vérifie que "Médiapart." est la fin ou que le mot avant le point est Médiapart
+        return answer.endsWith('Médiapart.');
+      case 17:
+        // Contient un apostrophe
+        return answer.includes("'");
+      case 18:
+        // 'je' est en minuscules (on cherche exactement 'je', pas 'Je')
+        return /\bje\b/.test(answer) && !/\bJe\b/.test(answer);
+      case 19:
+        // Première lettre de chaque mot : majuscule seulement pour "Félicitations" et "Médiapart", minuscule sinon
+        const words = answer.split(' ');
+        if (words.length !==7) return false;
+        if (!checkCapitalization(words[0], true)) return false; // Félicitations avec majuscule
+        for(let i=1; i < words.length - 1; i++){
+          if (!checkCapitalization(words[i], false)) return false; // minuscule pour les autres mots intermédiaires
+        }
+        if (!checkCapitalization(words[words.length -1], true)) return false; // Médiapart majuscule
+        return true;
+      case 20:
+        // Pas d'autre ponctuation que virgule et point final
+        return !/[;:!?]/.test(answer);
+      case 21:
+        // Pas de double espace
+        return !answer.includes("  ");
+      case 22:
+        // Pas le mot 'offre' tout seul (doit être "t'offre")
+        return !/\boffre\b/.test(answer);
+      case 23:
+        // Sensible à la casse (on compare exactement)
+        return answer === answer;
+      case 24:
+        // Réponse exacte finale
+        return answer === finalPhrase;
+      default:
+        return false;
+    }
+  }
+
+  submitBtn.addEventListener('click', () => {
+    const answer = answerInput.value.trim();
+
+    if (checkAnswer(answer)) {
+      step++;
+      if (step === rules.length) {
+        messageDiv.innerHTML = "<span class='success'>Bravo ! Tu as réussi à construire la phrase finale ! 🎉</span>";
+        ruleDiv.textContent = "";
+        answerInput.disabled = true;
+        submitBtn.disabled = true;
+      } else {
+        messageDiv.innerHTML = "<span class='success'>Correct ! Passons à la règle suivante.</span>";
+        showRule();
+      }
+    } else {
+      messageDiv.innerHTML = "<span class='error'>Oups, cette réponse ne respecte pas la règle. Essaie encore !</span>";
+    }
+  });
+
+  // Démarrage
+  showRule();
+</script>
 
 </body>
 </html>
