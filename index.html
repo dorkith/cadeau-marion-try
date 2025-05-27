@@ -9,110 +9,112 @@
       background: #0f0f23;
       color: #f2f2f2;
       padding: 20px;
-      max-width: 600px;
-      margin: auto;
     }
-    h1, h2, h3 {
-      text-align: center;
+    .container {
+      max-width: 700px;
+      margin: auto;
     }
     input, button {
       width: 100%;
       padding: 12px;
       font-size: 1rem;
       margin-top: 10px;
+      border-radius: 5px;
       border: none;
-      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    input {
+      background: #1c1c3c;
+      color: #eee;
     }
     button {
       background: #1f8a70;
       color: white;
       cursor: pointer;
+      transition: background 0.3s ease;
     }
-    .success { color: #4caf50; }
-    .error { color: #f44336; }
+    button:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+    button:hover:not(:disabled) {
+      background: #16664e;
+    }
+    .success { color: #4caf50; margin-top: 10px; }
+    .error { color: #f44336; margin-top: 10px; }
     ul { padding-left: 20px; }
-    #rulesList li.valid { text-decoration: line-through; color: #4caf50; }
+    li { margin-bottom: 8px; }
+    #rulesList {
+      margin-bottom: 15px;
+    }
   </style>
 </head>
 <body>
-  <h1>🧠 Le Mot de Passe Impossible</h1>
-  <h2>Respecte toutes les règles pour avancer</h2>
+  <div class="container">
+    <h1>🧠 Le Mot de Passe Impossible</h1>
+    <h2>Respecte toutes les règles pour trouver LA bonne phrase !</h2>
 
-  <h3>Règles à valider :</h3>
-  <ul id="rulesList"></ul>
+    <h3>Règle à respecter :</h3>
+    <ul id="rulesList"></ul>
 
-  <input id="answerInput" type="text" placeholder="Tape ta proposition ici..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
-  <button id="submitBtn">Valider</button>
+    <input id="answerInput" type="text" placeholder="Tape ta proposition ici..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" />
+    <button id="submitBtn" disabled>Valider</button>
 
-  <p id="message"></p>
-  <p id="stats"></p>
+    <p id="message"></p>
+    <p id="stats"></p>
+  </div>
 
   <script>
     const rules = [
       {
         text: "La phrase commence par une majuscule.",
-        test: str => /^[A-ZÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/.test(str.trim())
+        test: str => /^[A-ZÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/.test(str),
       },
       {
         text: "La phrase contient exactement 6 mots.",
-        test: str => str.trim().split(/\s+/).length === 6
+        test: str => str.trim().split(/\s+/).length === 6,
       },
       {
         text: "La phrase contient une virgule.",
-        test: str => /,/.test(str)
+        test: str => /,/.test(str),
       },
       {
-        text: "Un mot de la phrase a exactement 4 lettres.",
-        test: str => str.trim().split(/\s+/).some(w => w.replace(/[.,!?:;]/g,'').length === 4)
+        text: "La phrase contient un pronom personnel (je, tu, il...).",
+        test: str => /\b(je|tu|il|elle|on|nous|vous|ils|elles)\b/i.test(str),
+      },
+      {
+        text: "La phrase contient une contraction (ex: t'offre, j'aime...).",
+        test: str => /\b(j'|t'|l'|n'|s')\w+/i.test(str),
       },
       {
         text: "La phrase contient au moins 3 lettres accentuées.",
-        test: str => {
-          const accents = str.match(/[àâäéèêëïîôöùûüç]/gi);
-          return accents && accents.length >= 3;
-        }
+        test: str => [...str].filter(c => "àâäéèêëïîôöùûüç".includes(c.toLowerCase())).length >= 3,
       },
       {
-        text: "Aucun mot n'est répété.",
-        test: str => {
-          const words = str.toLowerCase().match(/\b\w+\b/g);
-          return words && (new Set(words)).size === words.length;
-        }
-      },
-      {
-        text: "La phrase contient au moins un emoji.",
-        test: str => {
-          // Emoji regex simplifiée
-          return /[\u231A-\uD83E\uDDFF]/.test(str);
-        }
-      },
-      {
-        text: "Le premier mot après la virgule commence par une lettre entre A et M.",
+        text: "Le mot juste après la virgule commence par un 'j' minuscule.",
         test: str => {
           const parts = str.split(',');
-          if(parts.length < 2) return false;
-          const firstWordAfterComma = parts[1].trim().split(/\s+/)[0];
-          return /^[A-Ma-m]/.test(firstWordAfterComma);
+          if (parts.length < 2) return false;
+          return parts[1].trim().startsWith('j');
         }
       },
       {
-        text: "Le dernier mot contient entre 5 et 10 lettres.",
+        text: "Le mot 'abonnement' est présent mais n'est pas le dernier mot.",
         test: str => {
-          const lastWord = str.trim().split(/\s+/).pop().replace(/[.,!?:;]/g,'');
-          return lastWord.length >=5 && lastWord.length <= 10;
+          const words = str.trim().toLowerCase().replace(/[.,!?]/g, '').split(/\s+/);
+          return words.includes("abonnement") && words[words.length - 1] !== "abonnement";
         }
       },
       {
-        text: "Tous les mots commencent par une lettre différente quand triés alphabétiquement.",
+        text: "Le dernier mot commence par un 'M' majuscule.",
         test: str => {
-          const words = str.toLowerCase().match(/\b\w+\b/g);
-          if (!words) return false;
-          const sorted = words.slice().sort();
-          for(let i = 1; i < sorted.length; i++) {
-            if(sorted[i][0] === sorted[i-1][0]) return false;
-          }
-          return true;
+          const words = str.trim().split(/\s+/);
+          return words[words.length -1].startsWith("M");
         }
+      },
+      {
+        text: "La phrase exacte est respectée (sans indice direct) : elle doit correspondre à la phrase finale.",
+        test: str => str === "Félicitation, je t'offre un abonnement Médiapart."
       }
     ];
 
@@ -126,48 +128,56 @@
     const rulesList = document.getElementById("rulesList");
     const statsDiv = document.getElementById("stats");
 
-    function updateRulesList() {
+    function showRule() {
       rulesList.innerHTML = "";
-      rules.forEach((rule, index) => {
-        const li = document.createElement("li");
-        li.textContent = rule.text;
-        if(index < step) li.classList.add("valid");
-        rulesList.appendChild(li);
-      });
+      const li = document.createElement("li");
+      li.textContent = rules[step].text;
+      rulesList.appendChild(li);
     }
 
-    function testCurrentRule(input) {
-      return rules[step].test(input);
+    function updateStats() {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      statsDiv.textContent = `Tentatives : ${attempts} | Temps écoulé : ${elapsed} sec`;
     }
+
+    // Active ou désactive le bouton selon le contenu
+    answerInput.addEventListener("input", () => {
+      submitBtn.disabled = answerInput.value.trim().length === 0;
+      messageDiv.textContent = "";
+    });
 
     submitBtn.addEventListener("click", () => {
       const input = answerInput.value.trim();
-      if(!input) return;
+      if (!input) return;
 
       attempts++;
 
-      if(testCurrentRule(input)) {
-        messageDiv.textContent = `✅ Règle ${step + 1} validée !`;
-        messageDiv.className = "success";
+      if (rules[step].test(input)) {
         step++;
-        if(step === rules.length) {
-          messageDiv.textContent = "🎉 Félicitations ! Tu as validé toutes les règles.";
+        messageDiv.textContent = "✅ Bien joué, règle validée !";
+        messageDiv.className = "success";
+        if (step === rules.length) {
+          messageDiv.textContent = "🎉 Félicitations ! Tu as trouvé la phrase parfaite.";
           submitBtn.disabled = true;
           answerInput.disabled = true;
+          rulesList.innerHTML = "";
+        } else {
+          showRule();
         }
-        updateRulesList();
       } else {
-        messageDiv.textContent = `❌ La phrase ne respecte pas la règle ${step + 1} : "${rules[step].text}"`;
+        messageDiv.textContent = "❌ Oups, ta phrase ne respecte pas la règle actuelle.";
         messageDiv.className = "error";
       }
-      statsDiv.textContent = `Tentatives : ${attempts} | Temps écoulé : ${Math.floor((Date.now() - startTime)/1000)} sec`;
+      updateStats();
     });
 
     answerInput.addEventListener("keypress", e => {
-      if(e.key === "Enter") submitBtn.click();
+      if (e.key === "Enter" && !submitBtn.disabled) submitBtn.click();
     });
 
-    updateRulesList();
+    // Initialisation
+    showRule();
+    updateStats();
   </script>
 </body>
 </html>
