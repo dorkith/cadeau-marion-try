@@ -1,332 +1,254 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>The Password Game - Version Cryptique</title>
+  <meta charset="UTF-8">
+  <title>Jeu de mot de passe cryptique</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #1e3c72, #2a5298);
-      color: white;
-      margin: 0;
+      background: #0f0f23;
+      color: #f2f2f2;
       padding: 20px;
-      min-height: 100vh;
-      transition: background-color 0.5s ease;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-      text-shadow: 0 0 8px #7ec8e3;
-    }
-    #completed-rules {
-      max-width: 700px;
-      margin: 0 auto 15px auto;
-      background: rgba(0,0,0,0.25);
-      padding: 15px 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px #004e7a;
-      font-size: 1em;
-      line-height: 1.3em;
-      max-height: 180px;
-      overflow-y: auto;
-    }
-    #completed-rules strong {
-      color: #7ef99f;
-      text-shadow: 0 0 6px #4bc07d;
-    }
-    #rules {
-      max-width: 700px;
-      margin: 0 auto 30px auto;
-      background: rgba(0,0,0,0.3);
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 12px #004e7a;
-      list-style: decimal inside;
-      font-size: 1.1em;
-      line-height: 1.4em;
-      min-height: 60px;
-    }
-    #input-container {
-      max-width: 600px;
-      margin: 0 auto 20px auto;
-      display: flex;
-      gap: 10px;
-    }
-    #answer {
-      flex-grow: 1;
-      font-size: 1.2em;
-      padding: 10px;
-      border-radius: 6px;
-      border: none;
-      outline: none;
-    }
-    #submit {
-      padding: 10px 20px;
-      font-size: 1.2em;
-      background-color: #42f5b9;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
+      line-height: 1.6;
       transition: background-color 0.3s ease;
-      color: #003022;
-      font-weight: bold;
     }
-    #submit:hover:not(:disabled) {
-      background-color: #36c49d;
+    .container {
+      max-width: 700px;
+      margin: auto;
     }
-    #submit:disabled {
-      background-color: #777;
-      cursor: default;
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 1rem;
+      margin-top: 10px;
     }
-    #message {
-      text-align: center;
-      font-size: 1.3em;
-      margin-bottom: 10px;
-      min-height: 2em;
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+      font-size: 1rem;
+      background: #1f8a70;
+      color: white;
+      border: none;
+      cursor: pointer;
     }
-    #message.success {
-      color: #7ef99f;
-      text-shadow: 0 0 8px #4bc07d;
+    .success {
+      color: #4caf50;
     }
-    #message.error {
-      color: #ff6b6b;
-      text-shadow: 0 0 8px #d14040;
+    .error {
+      color: #f44336;
     }
-    #stats {
-      text-align: center;
-      font-size: 1em;
-      color: #aaddffcc;
-      margin-top: 15px;
-    }
-    /* Flash red for error */
-    .error-flash {
-      animation: flashRed 0.9s;
-    }
-    @keyframes flashRed {
-      0%, 100% { background-color: #1e3c72; }
-      50% { background-color: #b22222; }
-    }
-    /* Flash green for success */
     .success-flash {
-      animation: flashGreen 1.2s;
-      box-shadow: 0 0 15px 4px #42f5b9 inset;
+      box-shadow: 0 0 20px 5px #4caf50 inset;
     }
-    @keyframes flashGreen {
-      0%, 100% { background-color: #1e3c72; }
-      50% { background-color: #2ef59e; }
+    .error-flash {
+      animation: shake 0.3s, redflash 0.3s;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-10px); }
+      40%, 80% { transform: translateX(10px); }
+    }
+    @keyframes redflash {
+      0% { background-color: #330000; }
+      100% { background-color: #0f0f23; }
+    }
+    ul {
+      padding-left: 20px;
     }
   </style>
 </head>
 <body>
-  <h1>The Password Game - Version Cryptique</h1>
+  <div class="container">
+    <h1>🔐 Jeu de mot de passe cryptique</h1>
+    <div id="rulesContainer">
+      <h2>Règle en cours :</h2>
+      <ul id="rulesList"></ul>
+      <h2>Règles validées :</h2>
+      <ul id="completedList"></ul>
+    </div>
 
-  <div id="completed-rules" aria-live="polite" aria-atomic="true">
-    <strong>Règles validées :</strong>
-    <ul id="completed-list" style="margin-top: 8px; padding-left: 20px;"></ul>
+    <input id="answerInput" type="text" placeholder="Tape ta réponse ici...">
+    <button id="submitBtn">Valider</button>
+
+    <p id="message"></p>
+    <p id="stats"></p>
   </div>
 
-  <ul id="rules"></ul>
-
-  <div id="input-container">
-    <input type="text" id="answer" placeholder="Tape ta réponse ici..." autocomplete="off" />
-    <button id="submit">Valider</button>
-  </div>
-
-  <div id="message"></div>
-  <div id="stats"></div>
+  <audio id="correctSound" src="https://www.soundjay.com/buttons/sounds/button-3.mp3"></audio>
+  <audio id="errorSound" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
 
   <script>
     (() => {
-      const answerInput = document.getElementById("answer");
-      const submitBtn = document.getElementById("submit");
-      const messageDiv = document.getElementById("message");
-      const rulesList = document.getElementById("rules");
-      const completedList = document.getElementById("completed-list");
-      const statsDiv = document.getElementById("stats");
-
-      const finalPhrase = "Félicitations, je t'offre un abonnement Médiapart.";
-
       const rules = [
-        "La réponse doit commencer par une majuscule.",
-        "La réponse doit contenir une apostrophe (').",
-        "La réponse doit contenir une virgule (,).",
-        "La phrase doit contenir exactement 6 mots.",
-        "Le premier mot doit avoir au moins 8 lettres.",
-        "La réponse doit contenir au moins 3 accents au total.",
-        "Le dernier mot doit commencer par la lettre M.",
-        "Le dernier mot doit avoir au moins 9 lettres.",
-        "La phrase doit contenir une contraction (ex: t' ou d').",
-        "La phrase doit contenir un mot avec une double lettre au milieu.",
-        "Il doit y avoir au moins un mot qui finit par la lettre 't'.",
-        "La phrase doit contenir un pronom personnel singulier.",
-        "La phrase ne doit pas dépasser 500 caractères.",
-        "Chaque mot doit contenir au moins une voyelle.",
-        "La phrase doit contenir exactement 5 espaces.",
-        "La phrase ne doit pas contenir la lettre 'z'.",
-        "La première lettre du troisième mot doit être 't'.",
-        "La phrase doit contenir au moins deux 'o'.",
-        "Le deuxième mot doit être plus court que le premier.",
-        "La phrase doit contenir le mot 'un'.",
-        "Le dernier mot doit contenir au moins 3 voyelles.",
-        "La phrase doit contenir au moins un accent circonflexe.",
-        "La phrase ne doit pas commencer ni se terminer par un espace.",
-        "Le mot avant le dernier doit commencer par la lettre 'a'.",
-        "Le mot après la virgule doit commencer par la lettre 'j'.",
-        "La phrase doit être exactement : 'Félicitations, je t'offre un abonnement Médiapart.'"
+        "Commence par une majuscule.",
+        "Contient une apostrophe.",
+        "Contient une virgule.",
+        "Contient exactement 6 mots.",
+        "Le premier mot fait au moins 8 lettres.",
+        "Contient au moins 3 lettres accentuées (même accent possible).",
+        "Le dernier mot commence par la lettre M.",
+        "Le dernier mot fait au moins 9 lettres.",
+        "Contient une contraction (ex: t'offre, j'aime, etc.).",
+        "Contient deux lettres identiques côte à côte au milieu du mot.",
+        "Se termine par la lettre T.",
+        "Contient un pronom personnel (je, tu, il...).",
+        "Fait moins de 500 caractères.",
+        "Chaque mot contient au moins une voyelle.",
+        "Contient exactement 5 espaces.",
+        "Ne contient pas la lettre Z.",
+        "Le troisième mot commence par un T.",
+        "Contient au moins deux lettres 'o'.",
+        "Le deuxième mot est plus court que le premier.",
+        "Contient le mot 'un'.",
+        "Le dernier mot contient au moins 3 voyelles.",
+        "Contient un accent circonflexe (â, ê, î, ô, û).",
+        "Ne commence ni ne finit par un espace.",
+        "L’avant-dernier mot commence par un A.",
+        "Le mot juste après la virgule commence par un J.",
+        "C’est exactement : Félicitation, je t'offre un abbonement Médiapart."
       ];
+
+      const finalPhrase = "Félicitation, je t'offre un abbonement Médiapart.";
 
       let step = 0;
       let attempts = 0;
       const startTime = Date.now();
 
-      function firstLetterIsUpper(str) {
-        return /^[A-ZÀ-Ÿ]/.test(str.trim());
-      }
-
-      function containsApostrophe(str) {
-        return str.includes("'");
-      }
-
-      function containsComma(str) {
-        return str.includes(",");
-      }
+      const answerInput = document.getElementById("answerInput");
+      const submitBtn = document.getElementById("submitBtn");
+      const messageDiv = document.getElementById("message");
+      const rulesList = document.getElementById("rulesList");
+      const completedList = document.getElementById("completedList");
+      const statsDiv = document.getElementById("stats");
+      const correctSound = document.getElementById("correctSound");
+      const errorSound = document.getElementById("errorSound");
 
       function countWords(str) {
         return str.trim().split(/\s+/).length;
       }
-
       function firstWord(str) {
-        return str.trim().split(/\s+/)[0];
+        return str.trim().split(/\s+/)[0] || "";
       }
-
-      function countAccents(str) {
-        const accentsChars = "àáâäãåèéêëìíîïòóôöõùúûüÿç";
-        let count = 0;
-        for (let c of str.toLowerCase()) {
-          if (accentsChars.includes(c)) count++;
-        }
-        return count;
-      }
-
       function lastWord(str) {
         const words = str.trim().split(/\s+/);
-        return words[words.length - 1];
+        return words[words.length - 1] || "";
       }
-
+      function countAccents(str) {
+        const accents = "àâäéèêëïîôöùûüç";
+        return [...str].filter(c => accents.includes(c.toLowerCase())).length;
+      }
+      function firstLetterIsUpper(str) {
+        return /^[A-ZÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/.test(str);
+      }
+      function containsApostrophe(str) {
+        return /'/.test(str);
+      }
+      function containsComma(str) {
+        return /,/.test(str);
+      }
       function hasContraction(str) {
-        return /(\bt'|\bd')/.test(str);
+        return /\b(j'|t'|l'|n'|s')\w+/i.test(str);
       }
-
       function hasDoubleLetterMiddle(str) {
-        const words = str.trim().split(/\s+/);
-        for (const w of words) {
-          if (w.length >= 4) {
-            for (let i = 1; i < w.length - 2; i++) {
-              if (w[i] === w[i + 1]) return true;
-            }
-          }
-        }
-        return false;
+        return /\B(\w)\1\B/.test(str);
       }
-
       function endsWithLetterT(str) {
-        const words = str.trim().split(/\s+/);
-        return words.some(w => w.endsWith("t") || w.endsWith("T"));
+        return /t\.?$/.test(str);
       }
-
       function hasPersonalPronoun(str) {
-        const pronouns = ["je", "tu", "il", "elle", "on
-  function noZ(str) {
-    return !/[zZ]/.test(str);
-  }
-
-  function checkRule(step, str) {
-    str = str.trim();
-    switch (step) {
-      case 0: return firstLetterIsUpper(str);
-      case 1: return containsApostrophe(str);
-      case 2: return containsComma(str);
-      case 3: return countWords(str) === 6;
-      case 4: return firstWord(str).length >= 8;
-      case 5: return countAccents(str) >= 3;
-      case 6: return lastWord(str)[0].toLowerCase() === 'm';
-      case 7: return lastWord(str).length >= 9;
-      case 8: return hasContraction(str);
-      case 9: return hasDoubleLetterMiddle(str);
-      case 10: return endsWithLetterT(str);
-      case 11: return hasPersonalPronoun(str);
-      case 12: return str.length <= 500;
-      case 13: return str.split(/\s+/).every(w => /[aeiouyàâäéèêëïîôöùûü]/i.test(w));
-      case 14: return (str.match(/ /g) || []).length === 5;
-      case 15: return noZ(str);
-      case 16: return str.trim().split(/\s+/)[2]?.[0]?.toLowerCase() === 't';
-      case 17: return (str.match(/o/gi) || []).length >= 2;
-      case 18: {
-        const words = str.trim().split(/\s+/);
-        return words[1]?.length < words[0]?.length;
+        return /\b(je|tu|il|elle|on|nous|vous|ils|elles)\b/i.test(str);
       }
-      case 19: return /\bun\b/.test(str);
-      case 20: return (lastWord(str).match(/[aeiouyàâäéèêëïîôöùûü]/gi) || []).length >= 3;
-      case 21: return /[âêîôû]/.test(str);
-      case 22: return !/^\s|\s$/.test(str);
-      case 23: {
-        const words = str.trim().split(/\s+/);
-        return words[words.length - 2]?.[0]?.toLowerCase() === 'a';
+      function checkRule(step, str) {
+        str = str.trim();
+        switch (step) {
+          case 0: return firstLetterIsUpper(str);
+          case 1: return containsApostrophe(str);
+          case 2: return containsComma(str);
+          case 3: return countWords(str) === 6;
+          case 4: return firstWord(str).length >= 8;
+          case 5: return countAccents(str) >= 3;
+          case 6: return lastWord(str)[0]?.toLowerCase() === 'm';
+          case 7: return lastWord(str).length >= 9;
+          case 8: return hasContraction(str);
+          case 9: return hasDoubleLetterMiddle(str);
+          case 10: return endsWithLetterT(str);
+          case 11: return hasPersonalPronoun(str);
+          case 12: return str.length <= 500;
+          case 13: return str.split(/\s+/).every(w => /[aeiouyàâäéèêëïîôöùûü]/i.test(w));
+          case 14: return (str.match(/ /g) || []).length === 5;
+          case 15: return !/[zZ]/.test(str);
+          case 16: return str.trim().split(/\s+/)[2]?.[0]?.toLowerCase() === 't';
+          case 17: return (str.match(/o/gi) || []).length >= 2;
+          case 18: {
+            const words = str.trim().split(/\s+/);
+            return words[1]?.length < words[0]?.length;
+          }
+          case 19: return /\bun\b/.test(str);
+          case 20: return (lastWord(str).match(/[aeiouyàâäéèêëïîôöùûü]/gi) || []).length >= 3;
+          case 21: return /[âêîôû]/.test(str);
+          case 22: return !/^\s|\s$/.test(str);
+          case 23: {
+            const words = str.trim().split(/\s+/);
+            return words[words.length - 2]?.[0]?.toLowerCase() === 'a';
+          }
+          case 24: {
+            const afterComma = str.split(',')[1]?.trim().split(/\s+/)[0];
+            return afterComma?.[0]?.toLowerCase() === 'j';
+          }
+          case 25: return str === finalPhrase;
+          default: return false;
+        }
       }
-      case 24: {
-        const afterComma = str.split(',')[1]?.trim().split(/\s+/)[0];
-        return afterComma?.[0]?.toLowerCase() === 'j';
+
+      function nextRule() {
+        if (step >= rules.length) {
+          rulesList.innerHTML = "<li><strong>🎉 Toutes les règles ont été validées !</strong></li>";
+          messageDiv.textContent = "Bravo ! Tu as gagné 🎉";
+          messageDiv.className = "success";
+          submitBtn.disabled = true;
+          return;
+        }
+        rulesList.innerHTML = `<li>${rules[step]}</li>`;
       }
-      case 25: return str === finalPhrase;
-      default: return false;
-    }
-  }
 
-  function nextRule() {
-    if (step >= rules.length) {
-      rulesList.innerHTML = "<li><strong>🎉 Toutes les règles ont été validées !</strong></li>";
-      messageDiv.textContent = "Bravo ! Tu as gagné 🎉";
-      messageDiv.className = "success";
-      submitBtn.disabled = true;
-      return;
-    }
-    rulesList.innerHTML = `<li>${rules[step]}</li>`;
-  }
+      submitBtn.addEventListener("click", () => {
+        const input = answerInput.value.trim();
+        if (!input) return;
 
-  submitBtn.addEventListener("click", () => {
-    const input = answerInput.value.trim();
-    if (!input) return;
+        attempts++;
 
-    attempts++;
+        if (checkRule(step, input)) {
+          correctSound.play();
+          messageDiv.textContent = "✅ Règle validée !";
+          messageDiv.className = "success";
+          document.body.classList.add("success-flash");
 
-    if (checkRule(step, input)) {
-      messageDiv.textContent = "✅ Règle validée !";
-      messageDiv.className = "success";
-      document.body.classList.add("success-flash");
+          const validated = document.createElement("li");
+          validated.textContent = rules[step];
+          completedList.appendChild(validated);
 
-      const validated = document.createElement("li");
-      validated.textContent = rules[step];
-      completedList.appendChild(validated);
+          step++;
+          nextRule();
+        } else {
+          errorSound.play();
+          messageDiv.textContent = "❌ Essaie encore, ce n'est pas encore bon.";
+          messageDiv.className = "error";
+          document.body.classList.add("error-flash");
+        }
 
-      step++;
+        setTimeout(() => {
+          document.body.classList.remove("success-flash", "error-flash");
+        }, 800);
+
+        statsDiv.textContent = `Tentatives : ${attempts} | Temps écoulé : ${Math.floor((Date.now() - startTime) / 1000)} sec`;
+      });
+
+      answerInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") submitBtn.click();
+      });
+
       nextRule();
-    } else {
-      messageDiv.textContent = "❌ Essaie encore, ce n'est pas encore bon.";
-      messageDiv.className = "error";
-      document.body.classList.add("error-flash");
-    }
-
-    setTimeout(() => {
-      document.body.classList.remove("success-flash", "error-flash");
-    }, 1000);
-
-    statsDiv.textContent = `Tentatives : ${attempts} | Temps écoulé : ${Math.floor((Date.now() - startTime) / 1000)} sec`;
-  });
-
-  answerInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") submitBtn.click();
-  });
-
-  nextRule();
-})();
+    })();
+  </script>
+</body>
+</html>
