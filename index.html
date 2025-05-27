@@ -20,27 +20,18 @@
       margin-bottom: 20px;
       text-shadow: 0 0 8px #7ec8e3;
     }
-    #rules {
+    #rule {
       max-width: 600px;
       margin: 0 auto 30px auto;
-      padding: 10px;
-      background: rgba(0,0,0,0.25);
+      padding: 15px 20px;
+      background: rgba(0,0,0,0.3);
       border-radius: 8px;
-      box-shadow: 0 0 10px #004e7a;
-      max-height: 400px;
-      overflow-y: auto;
-    }
-    .rule-item {
-      padding: 8px 12px;
-      margin-bottom: 6px;
-      border-left: 4px solid transparent;
-      font-size: 1.1em;
-      line-height: 1.3em;
-    }
-    .rule-item.current {
-      border-left-color: #42f5b9;
-      background: rgba(66, 245, 185, 0.15);
-      font-weight: bold;
+      box-shadow: 0 0 12px #004e7a;
+      font-size: 1.3em;
+      line-height: 1.4em;
+      text-align: center;
+      min-height: 70px;
+      user-select: none;
     }
     #input-container {
       max-width: 600px;
@@ -139,7 +130,7 @@
 <body>
   <h1>The Password Game - Version Cryptique</h1>
 
-  <div id="rules"></div>
+  <div id="rule"></div>
 
   <div id="input-container">
     <input type="text" id="answer" placeholder="Tape ta réponse ici..." autocomplete="off" />
@@ -154,26 +145,26 @@
       const answerInput = document.getElementById("answer");
       const submitBtn = document.getElementById("submit");
       const messageDiv = document.getElementById("message");
-      const rulesContainer = document.getElementById("rules");
+      const ruleDiv = document.getElementById("rule");
       const statsDiv = document.getElementById("stats");
 
       const finalPhrase = "Félicitations, je t'offre un abonnement Médiapart.";
 
-      // Liste des règles corrigées (modif règles 6 et 13)
+      // Règles corrigées avec règles 6 et 13 fixes
       const rules = [
         "La réponse doit commencer par une majuscule.",
         "La réponse doit contenir une apostrophe (').",
         "La réponse doit contenir une virgule (,).",
         "La phrase doit contenir exactement 6 mots.",
         "Le premier mot doit avoir au moins 8 lettres.",
-        "La réponse doit contenir au moins 3 accents différents.",
+        "La réponse doit contenir au moins 3 accents différents (sans compter répétitions).",
         "Le dernier mot doit commencer par la lettre M.",
         "Le dernier mot doit avoir au moins 9 lettres.",
         "La phrase doit contenir une contraction (ex: t' ou d').",
         "La phrase doit contenir un mot avec une double lettre au milieu.",
         "Il doit y avoir au moins un mot qui finit par la lettre 't'.",
         "La phrase doit contenir un pronom personnel singulier.",
-        "La phrase doit contenir au maximum 500 caractères.",
+        "La phrase ne doit pas dépasser 500 caractères.",
         "Chaque mot doit contenir au moins une voyelle.",
         "La phrase doit contenir exactement 5 espaces.",
         "La phrase ne doit pas contenir la lettre 'z'.",
@@ -284,6 +275,12 @@
         return (str.match(/o/gi) || []).length >= 2;
       }
 
+      function secondWordShorterThanFirst(str) {
+        const words = str.trim().split(/\s+/);
+        if (words.length < 2) return false;
+        return words[1].length < words[0].length;
+      }
+
       function containsWordUn(str) {
         return /\bun\b/i.test(str);
       }
@@ -320,7 +317,7 @@
         return str.trim() === finalPhrase;
       }
 
-      // Tableau des fonctions validant chaque règle dans l'ordre des règles
+      // Tableau des validateurs
       const validators = [
         firstLetterIsUpper,
         containsApostrophe,
@@ -340,6 +337,7 @@
         noLetterZ,
         thirdWordStartsWithT,
         containsAtLeastTwoO,
+        secondWordShorterThanFirst,
         containsWordUn,
         lastWordHasAtLeast3Vowels,
         containsCircumflexAccent,
@@ -349,19 +347,10 @@
         isFinalPhrase,
       ];
 
-      // Affichage des règles
-      function renderRules() {
-        rulesContainer.innerHTML = "";
-        rules.forEach((rule, i) => {
-          const div = document.createElement("div");
-          div.className = "rule-item";
-          if (i === step) div.classList.add("current");
-          div.textContent = `${i + 1}. ${rule}`;
-          rulesContainer.appendChild(div);
-        });
+      function renderRule() {
+        ruleDiv.textContent = `Règle ${step + 1} : ${rules[step]}`;
       }
 
-      // Affiche un message stylisé
       function showMessage(text, type = "error") {
         messageDiv.textContent = text;
         messageDiv.className = "";
@@ -371,25 +360,21 @@
         } else if (type === "success") {
           messageDiv.classList.add("success");
           flashSuccess();
-        } else {
-          // neutre
         }
       }
 
-      // Animation flash erreur
       function flashError() {
         document.body.classList.remove("error-flash");
-        void document.body.offsetWidth; // trigger reflow
+        void document.body.offsetWidth;
         document.body.classList.add("error-flash");
       }
-      // Animation flash succès
+
       function flashSuccess() {
         document.body.classList.remove("success-flash");
         void document.body.offsetWidth;
         document.body.classList.add("success-flash");
       }
 
-      // Confettis animation
       function launchConfetti() {
         const colors = ['#ff0a54','#ff477e','#ff85a1','#fbb1b1','#f9bec7'];
         for (let i = 0; i < 100; i++) {
@@ -408,27 +393,26 @@
         }
       }
 
-      // Met à jour l'affichage des stats
       function updateStats() {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
         statsDiv.textContent = `Étape ${step + 1} / ${rules.length} | Tentatives : ${attempts} | Temps écoulé : ${elapsed}s`;
       }
 
-      // Vérifie la réponse pour l'étape courante
       function checkAnswer(input) {
         const valid = validators[step](input);
         if (valid) {
           showMessage("Bravo, règle validée !", "success");
           step++;
-          renderRules();
-          updateStats();
           if (step === rules.length) {
             showMessage("🎉 Vous avez terminé toutes les règles ! 🎉", "success");
             answerInput.disabled = true;
             submitBtn.disabled = true;
             launchConfetti();
-            return;
+            ruleDiv.textContent = "Bravo, vous avez fini le jeu !";
+          } else {
+            renderRule();
           }
+          updateStats();
           answerInput.value = "";
           answerInput.focus();
         } else {
@@ -439,7 +423,7 @@
       }
 
       // Initialisation
-      renderRules();
+      renderRule();
       updateStats();
 
       submitBtn.addEventListener("click", () => {
