@@ -3,208 +3,409 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Jeu du Mot de Passe Médiapart</title>
+<title>Le Jeu du Mot Secret - Médiapart</title>
 <style>
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: #121212;
     color: #eee;
-    max-width: 600px;
-    margin: 30px auto;
+    max-width: 650px;
+    margin: 40px auto;
     padding: 20px;
+    user-select: none;
   }
-  input, button {
+  h1 {
+    text-align: center;
+    margin-bottom: 0.2em;
+    font-weight: 700;
+  }
+  #questionCounter {
+    text-align: center;
+    margin-bottom: 2em;
+    font-size: 1.1em;
+    color: #ccc;
+  }
+  #questionText {
+    font-size: 1.3em;
+    margin-bottom: 20px;
+    min-height: 3em;
+  }
+  #inputArea input, #inputArea button, #inputArea select {
     width: 100%;
     padding: 12px;
-    margin: 10px 0;
-    font-size: 1rem;
-  }
-  button {
-    background-color: #1e90ff;
+    font-size: 1.1rem;
+    margin-top: 8px;
+    border-radius: 5px;
     border: none;
+    outline: none;
+  }
+  #inputArea button {
+    background-color: #1e90ff;
     color: white;
     cursor: pointer;
-    border-radius: 5px;
+    font-weight: bold;
   }
-  button:disabled {
+  #inputArea button:disabled {
     background-color: #555;
     cursor: default;
   }
-  .success {
+  #feedback {
+    margin-top: 20px;
+    min-height: 2em;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+  #feedback.success {
     color: #4caf50;
-    font-weight: bold;
   }
-  .error {
+  #feedback.error {
     color: #f44336;
-    font-weight: bold;
   }
-  .mini-game {
-    margin: 20px 0;
-    padding: 10px;
+  #miniGame {
+    margin-top: 25px;
     background: #222;
-    border-radius: 6px;
+    padding: 15px;
+    border-radius: 8px;
   }
-  .hidden { display: none; }
+  .hidden {
+    display: none;
+  }
   img {
     max-width: 100%;
-    border-radius: 8px;
+    border-radius: 10px;
+  }
+  button.miniGameBtn {
+    background-color: #3a7bd5;
+    padding: 12px 20px;
+    margin-top: 15px;
+    font-weight: 700;
   }
 </style>
 </head>
 <body>
 
-<h1>Jeu du Mot de Passe : Trouve la phrase contenant "Médiapart"</h1>
-<p id="instruction">Commence par entrer ta phrase :</p>
+<h1>Le Jeu du Mot Secret</h1>
+<div id="questionCounter"></div>
+<div id="questionText"></div>
 
-<input type="text" id="inputPhrase" placeholder="Tape ta phrase ici..." autocomplete="off" />
-<button id="validateBtn">Valider</button>
+<div id="inputArea">
+  <!-- Zone de saisie dynamique -->
+</div>
 
-<div id="message"></div>
+<div id="feedback"></div>
 
-<div id="miniGameContainer" class="mini-game hidden"></div>
+<div id="miniGame" class="hidden">
+  <!-- Mini-jeux ici -->
+</div>
 
 <script>
-  const phraseFinale = "Félicitation, je t'offre un abonnement Médiapart.";
+(() => {
+  const finalAnswer = "Médiapart";
 
-  const rules = [
+  // Liste des questions (25), avec :
+  // - text : question / consigne
+  // - type : type d'interaction ('text', 'select', 'button', 'miniGame')
+  // - test : fonction booléenne qui valide la réponse
+  // - options : pour 'select', liste des options
+  // - miniGame : fonction callback (si type = 'miniGame')
+
+  const questions = [
     {
-      description: "La phrase commence par une majuscule.",
-      test: str => /^[A-ZÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/.test(str)
+      text: "1) Tape un mot qui commence par la lettre 'M' (majuscule).",
+      type: "text",
+      test: ans => ans.trim().startsWith("M")
     },
     {
-      description: "La phrase contient exactement 6 mots.",
-      test: str => str.trim().split(/\s+/).length === 6
+      text: "2) Tape un mot de 8 lettres.",
+      type: "text",
+      test: ans => ans.trim().length === 8
     },
     {
-      description: "La phrase contient une virgule.",
-      test: str => /,/.test(str)
+      text: "3) Choisis la bonne réponse : Quel est le 1er caractère du mot 'Médiapart' ?",
+      type: "select",
+      options: ["A", "M", "P", "E"],
+      test: ans => ans === "M"
     },
     {
-      description: "La phrase contient le mot 'abonnement'.",
-      test: str => /\babonnement\b/i.test(str)
+      text: "4) Tape un mot contenant la lettre 'd' (minuscule).",
+      type: "text",
+      test: ans => ans.includes("d")
     },
     {
-      description: `La phrase finale est : "${phraseFinale}"`,
-      test: str => str === phraseFinale
+      text: "5) Tape un mot qui finit par 't'.",
+      type: "text",
+      test: ans => ans.trim().endsWith("t")
+    },
+    {
+      text: "6) Mini-jeu : Clique sur le bouton bleu pour continuer.",
+      type: "miniGame",
+      miniGame: (next) => {
+        miniGameContainer.innerHTML = `
+          <button id="btnContinue" class="miniGameBtn">Clique-moi !</button>
+        `;
+        miniGameContainer.classList.remove('hidden');
+        document.getElementById('btnContinue').onclick = () => {
+          miniGameContainer.classList.add('hidden');
+          next();
+        };
+      }
+    },
+    {
+      text: "7) Tape un mot qui contient exactement deux 'a'.",
+      type: "text",
+      test: ans => (ans.match(/a/g) || []).length === 2
+    },
+    {
+      text: "8) Tape un mot sans lettre 'e' (minuscule).",
+      type: "text",
+      test: ans => !ans.includes("e")
+    },
+    {
+      text: "9) Choisis la bonne réponse : Combien de lettres y a-t-il dans 'Médiapart' ?",
+      type: "select",
+      options: ["8", "9", "10", "11"],
+      test: ans => ans === "9"
+    },
+    {
+      text: "10) Tape un mot qui commence par 'Mé' (avec accent).",
+      type: "text",
+      test: ans => ans.startsWith("Mé")
+    },
+    {
+      text: "11) Mini-jeu : Devine l'image floutée, puis clique sur le bouton.",
+      type: "miniGame",
+      miniGame: (next) => {
+        miniGameContainer.innerHTML = `
+          <p>Que vois-tu ? Clique pour continuer.</p>
+          <img src="https://picsum.photos/300/150?blur=8" alt="Image floutée" />
+          <button id="btnImg" class="miniGameBtn">J'ai deviné</button>
+        `;
+        miniGameContainer.classList.remove('hidden');
+        document.getElementById('btnImg').onclick = () => {
+          miniGameContainer.classList.add('hidden');
+          next();
+        };
+      }
+    },
+    {
+      text: "12) Tape un mot contenant au moins une lettre 'p'.",
+      type: "text",
+      test: ans => ans.includes("p")
+    },
+    {
+      text: "13) Tape un mot où la 3e lettre est 'i'.",
+      type: "text",
+      test: ans => ans.length >= 3 && ans[2].toLowerCase() === "i"
+    },
+    {
+      text: "14) Tape un mot qui contient au moins une lettre accentuée.",
+      type: "text",
+      test: ans => /[àâäéèêëïîôöùûüç]/i.test(ans)
+    },
+    {
+      text: "15) Choisis la bonne réponse : Quelle lettre est la dernière de 'Médiapart' ?",
+      type: "select",
+      options: ["t", "r", "p", "a"],
+      test: ans => ans === "t"
+    },
+    {
+      text: "16) Mini-jeu : Tape 'MEDIAPART' en majuscule dans le champ ci-dessous.",
+      type: "miniGame",
+      miniGame: (next) => {
+        miniGameContainer.innerHTML = `
+          <input type="text" id="inputCaps" placeholder="Tape MEDIAPART ici" autocomplete="off" />
+          <button id="btnCaps" class="miniGameBtn" disabled>Valider</button>
+        `;
+        miniGameContainer.classList.remove('hidden');
+        const inputCaps = document.getElementById('inputCaps');
+        const btnCaps = document.getElementById('btnCaps');
+        inputCaps.addEventListener('input', () => {
+          btnCaps.disabled = inputCaps.value !== "MEDIAPART";
+        });
+        btnCaps.onclick = () => {
+          miniGameContainer.classList.add('hidden');
+          next();
+        };
+      }
+    },
+    {
+      text: "17) Tape un mot de 9 lettres.",
+      type: "text",
+      test: ans => ans.trim().length === 9
+    },
+    {
+      text: "18) Tape un mot contenant la lettre 'r'.",
+      type: "text",
+      test: ans => ans.includes("r")
+    },
+    {
+      text: "19) Tape un mot commençant par 'M' et finissant par 't'.",
+      type: "text",
+      test: ans => ans.startsWith("M") && ans.endsWith("t")
+    },
+    {
+      text: "20) Mini-jeu : Clique sur le bouton pour simuler une inclinaison.",
+      type: "miniGame",
+      miniGame: (next) => {
+        miniGameContainer.innerHTML = `
+          <p>Simule une inclinaison en cliquant ci-dessous.</p>
+          <button id="btnTilt" class="miniGameBtn">Incliner le téléphone</button>
+        `;
+        miniGameContainer.classList.remove('hidden');
+        document.getElementById('btnTilt').onclick = () => {
+          miniGameContainer.classList.add('hidden');
+          next();
+        };
+      }
+    },
+    {
+      text: "21) Tape un mot qui contient exactement deux lettres 'a' et une lettre 'p'.",
+      type: "text",
+      test: ans => ((ans.match(/a/g) || []).length === 2) && ans.includes("p")
+    },
+    {
+      text: "22) Tape un mot où la 5e lettre est 'a'.",
+      type: "text",
+      test: ans => ans.length >= 5 && ans[4].toLowerCase() === "a"
+    },
+    {
+      text: "23) Tape un mot sans la lettre 'z'.",
+      type: "text",
+      test: ans => !ans.includes("z")
+    },
+    {
+      text: "24) Choisis la bonne réponse : Quelle lettre est la 6e lettre de 'Médiapart' ?",
+      type: "select",
+      options: ["a", "p", "r", "t"],
+      test: ans => ans === "p"
+    },
+    {
+      text: "25) Tape le mot secret (avec la bonne casse).",
+      type: "text",
+      test: ans => ans === finalAnswer
     }
   ];
 
-  let step = 0;
-  let attempts = 0;
+  const questionCounter = document.getElementById("questionCounter");
+  const questionText = document.getElementById("questionText");
+  const inputArea = document.getElementById("inputArea");
+  const feedback = document.getElementById("feedback");
+  const miniGameContainer = document.getElementById("miniGame");
 
-  const inputPhrase = document.getElementById('inputPhrase');
-  const validateBtn = document.getElementById('validateBtn');
-  const message = document.getElementById('message');
-  const miniGameContainer = document.getElementById('miniGameContainer');
-  const instruction = document.getElementById('instruction');
+  let currentQuestion = 0;
 
-  // Mini-jeux pour chaque étape sauf la dernière
-  const miniGames = [
-    function miniGameEmoji(next) {
-      miniGameContainer.innerHTML = `
-        <p>Mini-jeu : Clique sur l'emoji 🎉 pour continuer.</p>
-        <button id="emojiBtn">🎉</button>
-      `;
-      miniGameContainer.classList.remove('hidden');
-      document.getElementById('emojiBtn').onclick = () => {
-        miniGameContainer.classList.add('hidden');
-        next();
+  function clearUI() {
+    inputArea.innerHTML = "";
+    feedback.textContent = "";
+    feedback.className = "";
+  }
+
+  function showQuestion() {
+    clearUI();
+    miniGameContainer.classList.add('hidden');
+
+    if (currentQuestion >= questions.length) {
+      questionCounter.textContent = "Bravo ! Tu as trouvé le mot secret : " + finalAnswer;
+      questionText.textContent = "";
+      return;
+    }
+
+    const q = questions[currentQuestion];
+    questionCounter.textContent = `Question ${currentQuestion + 1} / ${questions.length}`;
+    questionText.textContent = q.text;
+
+    if (q.type === "text") {
+      const input = document.createElement("input");
+      input.type = "text";
+      input.autocomplete = "off";
+      input.placeholder = "Écris ta réponse ici...";
+      inputArea.appendChild(input);
+
+      const btn = document.createElement("button");
+      btn.textContent = "Valider";
+      inputArea.appendChild(btn);
+
+      btn.onclick = () => {
+        const val = input.value.trim();
+        if (val.length === 0) {
+          feedback.textContent = "Merci de saisir une réponse.";
+          feedback.className = "error";
+          return;
+        }
+        if (q.test(val)) {
+          feedback.textContent = "Correct !";
+          feedback.className = "success";
+          currentQuestion++;
+          setTimeout(showQuestion, 800);
+        } else {
+          feedback.textContent = "Mauvaise réponse, réessaie.";
+          feedback.className = "error";
+        }
       };
-    },
-    function miniGameFlou(next) {
-      miniGameContainer.innerHTML = `
-        <p>Mini-jeu : Regarde cette image floutée. Devine ce que c'est, puis clique sur "J'ai deviné" pour continuer.</p>
-        <img src="https://picsum.photos/200/150?blur=8" alt="Image floutée" />
-        <button id="guessBtn">J'ai deviné</button>
-      `;
-      miniGameContainer.classList.remove('hidden');
-      document.getElementById('guessBtn').onclick = () => {
-        miniGameContainer.classList.add('hidden');
-        next();
-      };
-    },
-    function miniGameInclinaison(next) {
-      miniGameContainer.innerHTML = `
-        <p>Mini-jeu : Incline ton téléphone à gauche, puis clique sur "OK".</p>
-        <button id="inclineBtn">OK</button>
-      `;
-      miniGameContainer.classList.remove('hidden');
-      document.getElementById('inclineBtn').onclick = () => {
-        miniGameContainer.classList.add('hidden');
-        next();
-      };
-    },
-    function miniGameSecret(next) {
-      miniGameContainer.innerHTML = `
-        <p>Mini-jeu : Tape le mot secret <strong>MEDIAPART</strong> en majuscules puis clique sur valider.</p>
-        <input type="text" id="secretInput" placeholder="Tape MEDIAPART ici" autocomplete="off" />
-        <button id="secretBtn" disabled>Valider</button>
-      `;
-      miniGameContainer.classList.remove('hidden');
 
-      const secretInput = document.getElementById('secretInput');
-      const secretBtn = document.getElementById('secretBtn');
-
-      secretInput.addEventListener('input', () => {
-        secretBtn.disabled = secretInput.value !== "MEDIAPART";
+      input.focus();
+      input.addEventListener("keydown", e => {
+        if (e.key === "Enter") btn.click();
       });
-      secretBtn.onclick = () => {
-        miniGameContainer.classList.add('hidden');
-        next();
+
+    } else if (q.type === "select") {
+      const select = document.createElement("select");
+      const defaultOption = document.createElement("option");
+      defaultOption.textContent = "Choisis une réponse";
+      defaultOption.disabled = true;
+      defaultOption.selected = true;
+      select.appendChild(defaultOption);
+
+      q.options.forEach(opt => {
+        const option = document.createElement("option");
+        option.value = opt;
+        option.textContent = opt;
+        select.appendChild(option);
+      });
+
+      inputArea.appendChild(select);
+
+      const btn = document.createElement("button");
+      btn.textContent = "Valider";
+      inputArea.appendChild(btn);
+
+      btn.onclick = () => {
+        const val = select.value;
+        if (val === "" || val === "Choisis une réponse") {
+          feedback.textContent = "Merci de choisir une réponse.";
+          feedback.className = "error";
+          return;
+        }
+        if (q.test(val)) {
+          feedback.textContent = "Correct !";
+          feedback.className = "success";
+          currentQuestion++;
+          setTimeout(showQuestion, 800);
+        } else {
+          feedback.textContent = "Mauvaise réponse, réessaie.";
+          feedback.className = "error";
+        }
       };
-    }
-  ];
 
-  function showMessage(text, isError = false) {
-    message.textContent = text;
-    message.className = isError ? 'error' : 'success';
+      select.focus();
+
+    } else if (q.type === "miniGame") {
+      // Lance le mini-jeu, qui doit appeler next() pour continuer
+      q.miniGame(() => {
+        feedback.textContent = "Bravo, on continue !";
+        feedback.className = "success";
+        currentQuestion++;
+        setTimeout(() => {
+          feedback.textContent = "";
+          showQuestion();
+        }, 600);
+      });
+    }
   }
 
-  function nextStep() {
-    step++;
-    if (step >= rules.length) {
-      showMessage("🎉 Tu as réussi à trouver la phrase finale parfaite ! Bravo ! 🎉");
-      inputPhrase.disabled = true;
-      validateBtn.disabled = true;
-      instruction.textContent = "Jeu terminé.";
-      return;
-    }
-    instruction.textContent = `Étape ${step + 1} : ${rules[step].description}`;
-    inputPhrase.value = "";
-    inputPhrase.focus();
-  }
+  showQuestion();
 
-  validateBtn.onclick = () => {
-    const val = inputPhrase.value.trim();
-    if (!val) {
-      showMessage("❌ Entre une phrase.", true);
-      return;
-    }
-
-    attempts++;
-
-    if (!rules[step].test(val)) {
-      showMessage(`❌ La phrase ne respecte pas la règle : ${rules[step].description}`, true);
-      return;
-    }
-
-    showMessage("✅ Règle validée ! Passons au mini-jeu...");
-
-    // Lancer mini-jeu si ce n'est pas la dernière étape
-    if (step < miniGames.length) {
-      miniGames[step](nextStep);
-    } else {
-      nextStep();
-    }
-  };
-
-  inputPhrase.addEventListener("keypress", e => {
-    if (e.key === "Enter") validateBtn.click();
-  });
-
-  // Démarrage
-  instruction.textContent = `Étape 1 : ${rules[0].description}`;
-  inputPhrase.focus();
+})();
 </script>
 
 </body>
