@@ -47,6 +47,17 @@
       from { transform: scale(1); }
       to { transform: scale(1.1); }
     }
+    .medal {
+      margin-top: 20px;
+      font-size: 1.8rem;
+      animation: swing 1s ease-in-out infinite alternate;
+      color: gold;
+      text-shadow: 0 0 10px #ffd700;
+    }
+    @keyframes swing {
+      0% { transform: rotate(-5deg); }
+      100% { transform: rotate(5deg); }
+    }
   </style>
 </head>
 <body>
@@ -73,10 +84,10 @@
       { text: "Contient au moins deux lettres a.", test: str => (str.match(/a/gi) || []).length >= 2 },
       { text: "Ne se termine pas par une voyelle.", test: str => !/[aeiouyàâäéèêëïîôöùûü]$/i.test(str) },
       { text: "La lettre d doit être avant les a.", test: str => {
-    const dIndex = str.toLowerCase().indexOf("d");
-    const aIndex = str.toLowerCase().indexOf("a");
-    return dIndex !== -1 && aIndex !== -1 && dIndex < aIndex;
-} },
+        const dIndex = str.toLowerCase().indexOf("d");
+        const aIndex = str.toLowerCase().indexOf("a");
+        return dIndex !== -1 && aIndex !== -1 && dIndex < aIndex;
+      }},
       { text: "Contient la lettre i en 4ème position.", test: str => str[3]?.toLowerCase() === 'i' },
       { text: "Contient la lettre a au moins deux fois.", test: str => (str.match(/a/gi) || []).length >= 2 },
       { text: "Ne contient pas plus de 4 voyelles.", test: str => (str.match(/[aeiouyàâäéèêëïîôöùûü]/gi) || []).length <= 4 },
@@ -97,7 +108,7 @@
       { text: "Contient une voyelle avec un accent aigu.", test: str => /[é]/i.test(str) },
       { text: "La lettre r est la 8e lettre.", test: str => str[7]?.toLowerCase() === 'r' },
       { text: "Il doit y avoir un T juste après la lettre R.", test: str => /r(?=t)/i.test(str) },
-      { text: "Le mot est un journal.", test: str => ["médiapart"].includes(str.toLowerCase()) }
+      { text: "Le mot exact est : Médiapart", test: str => str === "Médiapart" }
     ];
 
     let step = 0, attempts = 0;
@@ -133,7 +144,15 @@
           messageDiv.className = "success";
           step++;
         } else {
-          messageDiv.innerHTML = '<span class="celebration">🎉 BRAVO ! Tu as deviné : MÉDIAPART 🎉</span>';
+          let finalMessage = '<span class="celebration">🎉 BRAVO ! Tu as deviné : MÉDIAPART 🎉</span>';
+
+          // Easter egg : succès rapide
+          const elapsedTime = (Date.now() - startTime) / 1000;
+          if (attempts <= 50 && elapsedTime <= 3600) {
+            finalMessage += `<div class="medal">🏅 Médaille du Déchiffreur Express !</div>`;
+          }
+
+          messageDiv.innerHTML = finalMessage;
           messageDiv.className = "success";
           submitBtn.disabled = true;
         }
