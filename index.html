@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Le Jeu du Mot Secret - Médiapart</title>
+<title>Jeu du Mot Secret - Médiapart</title>
 <style>
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -16,12 +16,12 @@
   }
   h1 {
     text-align: center;
-    margin-bottom: 0.2em;
+    margin-bottom: 0.3em;
     font-weight: 700;
   }
   #questionCounter {
     text-align: center;
-    margin-bottom: 2em;
+    margin-bottom: 1.5em;
     font-size: 1.1em;
     color: #ccc;
   }
@@ -30,7 +30,7 @@
     margin-bottom: 20px;
     min-height: 3em;
   }
-  #inputArea input, #inputArea button, #inputArea select {
+  #inputArea input, #inputArea button {
     width: 100%;
     padding: 12px;
     font-size: 1.1rem;
@@ -61,236 +61,54 @@
   #feedback.error {
     color: #f44336;
   }
-  #miniGame {
-    margin-top: 25px;
-    background: #222;
-    padding: 15px;
-    border-radius: 8px;
-  }
-  .hidden {
-    display: none;
-  }
-  img {
-    max-width: 100%;
-    border-radius: 10px;
-  }
-  button.miniGameBtn {
-    background-color: #3a7bd5;
-    padding: 12px 20px;
-    margin-top: 15px;
-    font-weight: 700;
-  }
 </style>
 </head>
 <body>
 
-<h1>Le Jeu du Mot Secret</h1>
+<h1>Jeu du Mot Secret</h1>
 <div id="questionCounter"></div>
 <div id="questionText"></div>
 
-<div id="inputArea">
-  <!-- Zone de saisie dynamique -->
-</div>
+<div id="inputArea"></div>
 
 <div id="feedback"></div>
-
-<div id="miniGame" class="hidden">
-  <!-- Mini-jeux ici -->
-</div>
 
 <script>
 (() => {
   const finalAnswer = "Médiapart";
 
-  // Liste des questions (25), avec :
-  // - text : question / consigne
-  // - type : type d'interaction ('text', 'select', 'button', 'miniGame')
-  // - test : fonction booléenne qui valide la réponse
-  // - options : pour 'select', liste des options
-  // - miniGame : fonction callback (si type = 'miniGame')
-
   const questions = [
-    {
-      text: "1) Tape un mot qui commence par la lettre 'M' (majuscule).",
-      type: "text",
-      test: ans => ans.trim().startsWith("M")
-    },
-    {
-      text: "2) Tape un mot de 8 lettres.",
-      type: "text",
-      test: ans => ans.trim().length === 8
-    },
-    {
-      text: "3) Choisis la bonne réponse : Quel est le 1er caractère du mot 'Médiapart' ?",
-      type: "select",
-      options: ["A", "M", "P", "E"],
-      test: ans => ans === "M"
-    },
-    {
-      text: "4) Tape un mot contenant la lettre 'd' (minuscule).",
-      type: "text",
-      test: ans => ans.includes("d")
-    },
-    {
-      text: "5) Tape un mot qui finit par 't'.",
-      type: "text",
-      test: ans => ans.trim().endsWith("t")
-    },
-    {
-      text: "6) Mini-jeu : Clique sur le bouton bleu pour continuer.",
-      type: "miniGame",
-      miniGame: (next) => {
-        miniGameContainer.innerHTML = `
-          <button id="btnContinue" class="miniGameBtn">Clique-moi !</button>
-        `;
-        miniGameContainer.classList.remove('hidden');
-        document.getElementById('btnContinue').onclick = () => {
-          miniGameContainer.classList.add('hidden');
-          next();
-        };
-      }
-    },
-    {
-      text: "7) Tape un mot qui contient exactement deux 'a'.",
-      type: "text",
-      test: ans => (ans.match(/a/g) || []).length === 2
-    },
-    {
-      text: "8) Tape un mot sans lettre 'e' (minuscule).",
-      type: "text",
-      test: ans => !ans.includes("e")
-    },
-    {
-      text: "9) Choisis la bonne réponse : Combien de lettres y a-t-il dans 'Médiapart' ?",
-      type: "select",
-      options: ["8", "9", "10", "11"],
-      test: ans => ans === "9"
-    },
-    {
-      text: "10) Tape un mot qui commence par 'Mé' (avec accent).",
-      type: "text",
-      test: ans => ans.startsWith("Mé")
-    },
-    {
-      text: "11) Mini-jeu : Devine l'image floutée, puis clique sur le bouton.",
-      type: "miniGame",
-      miniGame: (next) => {
-        miniGameContainer.innerHTML = `
-          <p>Que vois-tu ? Clique pour continuer.</p>
-          <img src="https://picsum.photos/300/150?blur=8" alt="Image floutée" />
-          <button id="btnImg" class="miniGameBtn">J'ai deviné</button>
-        `;
-        miniGameContainer.classList.remove('hidden');
-        document.getElementById('btnImg').onclick = () => {
-          miniGameContainer.classList.add('hidden');
-          next();
-        };
-      }
-    },
-    {
-      text: "12) Tape un mot contenant au moins une lettre 'p'.",
-      type: "text",
-      test: ans => ans.includes("p")
-    },
-    {
-      text: "13) Tape un mot où la 3e lettre est 'i'.",
-      type: "text",
-      test: ans => ans.length >= 3 && ans[2].toLowerCase() === "i"
-    },
-    {
-      text: "14) Tape un mot qui contient au moins une lettre accentuée.",
-      type: "text",
-      test: ans => /[àâäéèêëïîôöùûüç]/i.test(ans)
-    },
-    {
-      text: "15) Choisis la bonne réponse : Quelle lettre est la dernière de 'Médiapart' ?",
-      type: "select",
-      options: ["t", "r", "p", "a"],
-      test: ans => ans === "t"
-    },
-    {
-      text: "16) Mini-jeu : Tape 'MEDIAPART' en majuscule dans le champ ci-dessous.",
-      type: "miniGame",
-      miniGame: (next) => {
-        miniGameContainer.innerHTML = `
-          <input type="text" id="inputCaps" placeholder="Tape MEDIAPART ici" autocomplete="off" />
-          <button id="btnCaps" class="miniGameBtn" disabled>Valider</button>
-        `;
-        miniGameContainer.classList.remove('hidden');
-        const inputCaps = document.getElementById('inputCaps');
-        const btnCaps = document.getElementById('btnCaps');
-        inputCaps.addEventListener('input', () => {
-          btnCaps.disabled = inputCaps.value !== "MEDIAPART";
-        });
-        btnCaps.onclick = () => {
-          miniGameContainer.classList.add('hidden');
-          next();
-        };
-      }
-    },
-    {
-      text: "17) Tape un mot de 9 lettres.",
-      type: "text",
-      test: ans => ans.trim().length === 9
-    },
-    {
-      text: "18) Tape un mot contenant la lettre 'r'.",
-      type: "text",
-      test: ans => ans.includes("r")
-    },
-    {
-      text: "19) Tape un mot commençant par 'M' et finissant par 't'.",
-      type: "text",
-      test: ans => ans.startsWith("M") && ans.endsWith("t")
-    },
-    {
-      text: "20) Mini-jeu : Clique sur le bouton pour simuler une inclinaison.",
-      type: "miniGame",
-      miniGame: (next) => {
-        miniGameContainer.innerHTML = `
-          <p>Simule une inclinaison en cliquant ci-dessous.</p>
-          <button id="btnTilt" class="miniGameBtn">Incliner le téléphone</button>
-        `;
-        miniGameContainer.classList.remove('hidden');
-        document.getElementById('btnTilt').onclick = () => {
-          miniGameContainer.classList.add('hidden');
-          next();
-        };
-      }
-    },
-    {
-      text: "21) Tape un mot qui contient exactement deux lettres 'a' et une lettre 'p'.",
-      type: "text",
-      test: ans => ((ans.match(/a/g) || []).length === 2) && ans.includes("p")
-    },
-    {
-      text: "22) Tape un mot où la 5e lettre est 'a'.",
-      type: "text",
-      test: ans => ans.length >= 5 && ans[4].toLowerCase() === "a"
-    },
-    {
-      text: "23) Tape un mot sans la lettre 'z'.",
-      type: "text",
-      test: ans => !ans.includes("z")
-    },
-    {
-      text: "24) Choisis la bonne réponse : Quelle lettre est la 6e lettre de 'Médiapart' ?",
-      type: "select",
-      options: ["a", "p", "r", "t"],
-      test: ans => ans === "p"
-    },
-    {
-      text: "25) Tape le mot secret (avec la bonne casse).",
-      type: "text",
-      test: ans => ans === finalAnswer
-    }
+    { text: "1) Tape un mot qui commence par la lettre 'M' (majuscule).", test: ans => ans.trim().startsWith("M") },
+    { text: "2) Tape un mot de 9 lettres.", test: ans => ans.trim().length === 9 },
+    { text: "3) Tape un mot contenant la lettre 'd' (minuscule).", test: ans => ans.includes("d") },
+    { text: "4) Tape un mot contenant la lettre accentuée 'é'.", test: ans => ans.includes("é") },
+    { text: "5) Tape un mot qui finit par la lettre 't'.", test: ans => ans.trim().endsWith("t") },
+    { text: "6) Tape un mot qui contient exactement deux lettres 'a'.", test: ans => (ans.match(/a/g) || []).length === 2 },
+    { text: "7) Tape un mot qui contient la lettre 'p'.", test: ans => ans.includes("p") },
+    { text: "8) Tape un mot où la 3e lettre est 'i' (minuscule).", test: ans => ans.length >= 3 && ans[2].toLowerCase() === "i" },
+    { text: "9) Tape un mot où la 5e lettre est 'a'.", test: ans => ans.length >= 5 && ans[4].toLowerCase() === "a" },
+    { text: "10) Tape un mot qui contient la lettre 'r'.", test: ans => ans.includes("r") },
+    { text: "11) Tape un mot qui commence par 'Mé' (avec accent).", test: ans => ans.startsWith("Mé") },
+    { text: "12) Tape un mot sans la lettre 'z'.", test: ans => !ans.includes("z") },
+    { text: "13) Tape un mot qui contient la lettre 'i'.", test: ans => ans.includes("i") },
+    { text: "14) Tape un mot qui ne contient pas de majuscule sauf la première lettre.", test: ans => /^[A-Z][a-zàâäéèêëïîôöùûüç]*$/.test(ans) },
+    { text: "15) Tape un mot avec au moins une lettre accentuée.", test: ans => /[àâäéèêëïîôöùûüç]/i.test(ans) },
+    { text: "16) Tape un mot avec exactement 3 voyelles.", test: ans => (ans.match(/[aeiouyàâäéèêëïîôöùûü]/gi) || []).length === 3 },
+    { text: "17) Tape un mot qui ne contient pas la lettre 'o'.", test: ans => !ans.includes("o") },
+    { text: "18) Tape un mot dont la dernière lettre est 't'.", test: ans => ans.endsWith("t") },
+    { text: "19) Tape un mot où la lettre 'p' est avant la lettre 'r'.", test: ans => ans.indexOf("p") !== -1 && ans.indexOf("r") !== -1 && ans.indexOf("p") < ans.indexOf("r") },
+    { text: "20) Tape un mot qui contient une seule lettre 'm' (majuscule ou minuscule).", test: ans => ((ans.match(/[mM]/g) || []).length === 1) },
+    { text: "21) Tape un mot où la lettre 'a' est deux fois (au moins).", test: ans => (ans.match(/a/g) || []).length >= 2 },
+    { text: "22) Tape un mot qui ne contient pas d'espaces.", test: ans => !ans.includes(" ") },
+    { text: "23) Tape un mot qui commence par une majuscule et se termine par 't'.", test: ans => /^[A-Z].*t$/.test(ans) },
+    { text: "24) Tape un mot dont la 7e lettre est 'r'.", test: ans => ans.length >= 7 && ans[6].toLowerCase() === "r" },
+    { text: "25) Enfin, tape le mot secret (avec la bonne casse).", test: ans => ans === finalAnswer }
   ];
 
   const questionCounter = document.getElementById("questionCounter");
   const questionText = document.getElementById("questionText");
   const inputArea = document.getElementById("inputArea");
   const feedback = document.getElementById("feedback");
-  const miniGameContainer = document.getElementById("miniGame");
 
   let currentQuestion = 0;
 
@@ -300,12 +118,21 @@
     feedback.className = "";
   }
 
+  function validateAnswer(ans) {
+    // Valide la réponse en vérifiant toutes les règles jusqu'à currentQuestion inclus
+    for(let i = 0; i <= currentQuestion; i++) {
+      if(!questions[i].test(ans)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   function showQuestion() {
     clearUI();
-    miniGameContainer.classList.add('hidden');
 
     if (currentQuestion >= questions.length) {
-      questionCounter.textContent = "Bravo ! Tu as trouvé le mot secret : " + finalAnswer;
+      questionCounter.textContent = "🎉 Bravo ! Tu as trouvé le mot secret : " + finalAnswer;
       questionText.textContent = "";
       return;
     }
@@ -314,97 +141,42 @@
     questionCounter.textContent = `Question ${currentQuestion + 1} / ${questions.length}`;
     questionText.textContent = q.text;
 
-    if (q.type === "text") {
-      const input = document.createElement("input");
-      input.type = "text";
-      input.autocomplete = "off";
-      input.placeholder = "Écris ta réponse ici...";
-      inputArea.appendChild(input);
+    const input = document.createElement("input");
+    input.type = "text";
+    input.autocomplete = "off";
+    input.placeholder = "Écris ta réponse ici...";
+    inputArea.appendChild(input);
 
-      const btn = document.createElement("button");
-      btn.textContent = "Valider";
-      inputArea.appendChild(btn);
+    const btn = document.createElement("button");
+    btn.textContent = "Valider";
+    inputArea.appendChild(btn);
 
-      btn.onclick = () => {
-        const val = input.value.trim();
-        if (val.length === 0) {
-          feedback.textContent = "Merci de saisir une réponse.";
-          feedback.className = "error";
-          return;
-        }
-        if (q.test(val)) {
-          feedback.textContent = "Correct !";
-          feedback.className = "success";
-          currentQuestion++;
-          setTimeout(showQuestion, 800);
-        } else {
-          feedback.textContent = "Mauvaise réponse, réessaie.";
-          feedback.className = "error";
-        }
-      };
-
-      input.focus();
-      input.addEventListener("keydown", e => {
-        if (e.key === "Enter") btn.click();
-      });
-
-    } else if (q.type === "select") {
-      const select = document.createElement("select");
-      const defaultOption = document.createElement("option");
-      defaultOption.textContent = "Choisis une réponse";
-      defaultOption.disabled = true;
-      defaultOption.selected = true;
-      select.appendChild(defaultOption);
-
-      q.options.forEach(opt => {
-        const option = document.createElement("option");
-        option.value = opt;
-        option.textContent = opt;
-        select.appendChild(option);
-      });
-
-      inputArea.appendChild(select);
-
-      const btn = document.createElement("button");
-      btn.textContent = "Valider";
-      inputArea.appendChild(btn);
-
-      btn.onclick = () => {
-        const val = select.value;
-        if (val === "" || val === "Choisis une réponse") {
-          feedback.textContent = "Merci de choisir une réponse.";
-          feedback.className = "error";
-          return;
-        }
-        if (q.test(val)) {
-          feedback.textContent = "Correct !";
-          feedback.className = "success";
-          currentQuestion++;
-          setTimeout(showQuestion, 800);
-        } else {
-          feedback.textContent = "Mauvaise réponse, réessaie.";
-          feedback.className = "error";
-        }
-      };
-
-      select.focus();
-
-    } else if (q.type === "miniGame") {
-      // Lance le mini-jeu, qui doit appeler next() pour continuer
-      q.miniGame(() => {
-        feedback.textContent = "Bravo, on continue !";
+    btn.onclick = () => {
+      const val = input.value.trim();
+      if (val.length === 0) {
+        feedback.textContent = "Merci de saisir une réponse.";
+        feedback.className = "error";
+        return;
+      }
+      if (validateAnswer(val)) {
+        feedback.textContent = "Correct !";
         feedback.className = "success";
         currentQuestion++;
-        setTimeout(() => {
-          feedback.textContent = "";
-          showQuestion();
-        }, 600);
-      });
-    }
+        setTimeout(showQuestion, 700);
+      } else {
+        feedback.textContent = "Mauvaise réponse, réessaie.";
+        feedback.className = "error";
+      }
+    };
+
+    input.addEventListener("keypress", e => {
+      if(e.key === "Enter") btn.click();
+    });
+
+    input.focus();
   }
 
   showQuestion();
-
 })();
 </script>
 
