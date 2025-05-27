@@ -1,224 +1,113 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Jeu du Mot Secret - Médiapart</title>
-<style>
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #121212;
-    color: #eee;
-    max-width: 650px;
-    margin: 40px auto;
-    padding: 20px;
-    user-select: none;
-  }
-  h1 {
-    text-align: center;
-    margin-bottom: 0.3em;
-    font-weight: 700;
-  }
-  #questionCounter {
-    text-align: center;
-    margin-bottom: 1.5em;
-    font-size: 1.1em;
-    color: #ccc;
-  }
-  #questionText {
-    font-size: 1.3em;
-    margin-bottom: 20px;
-    min-height: 3em;
-  }
-  #inputArea input, #inputArea button {
-    width: 100%;
-    padding: 12px;
-    font-size: 1.1rem;
-    margin-top: 8px;
-    border-radius: 5px;
-    border: none;
-    outline: none;
-  }
-  #inputArea button {
-    background-color: #1e90ff;
-    color: white;
-    cursor: pointer;
-    font-weight: bold;
-  }
-  #inputArea button:disabled {
-    background-color: #555;
-    cursor: default;
-  }
-  #feedback {
-    margin-top: 20px;
-    min-height: 2em;
-    font-weight: 600;
-    font-size: 1.1rem;
-  }
-  #feedback.success {
-    color: #4caf50;
-  }
-  #feedback.error {
-    color: #f44336;
-  }
-  ul#rulesList {
-    margin-top: 30px;
-    padding-left: 20px;
-  }
-  ul#rulesList li {
-    margin-bottom: 8px;
-    font-weight: 600;
-    transition: color 0.3s;
-  }
-  ul#rulesList li.valid {
-    color: #4caf50;
-  }
-  ul#rulesList li.invalid {
-    color: #f44336;
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>Mot de passe impossible : Médiapart</title>
+  <style>
+    body {
+      background-color: #111;
+      color: white;
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 1rem;
+      width: 100%;
+      margin: 10px 0;
+    }
+    button {
+      background-color: #2ecc71;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .rule {
+      margin: 5px 0;
+    }
+    .valid {
+      color: #4caf50;
+    }
+    .invalid {
+      color: #e74c3c;
+    }
+  </style>
 </head>
 <body>
+  <h1>🔒 Devine le mot de passe !</h1>
+  <p>Tu dois trouver un seul mot qui respecte toutes les règles. Il y en a 25.</p>
+  <input type="text" id="passwordInput" placeholder="Entre ton mot ici...">
+  <button onclick="checkPassword()">Vérifier</button>
+  <ul id="rulesList"></ul>
+  <p id="successMessage" style="font-size: 1.5rem;"></p>
 
-<h1>Jeu du Mot Secret</h1>
-<div id="questionCounter"></div>
-<div id="questionText"></div>
+  <script>
+    const correctPassword = "Médiapart";
+    const input = document.getElementById("passwordInput");
+    const rulesList = document.getElementById("rulesList");
+    const successMessage = document.getElementById("successMessage");
 
-<div id="inputArea"></div>
+    const rules = [
+      { text: "Le mot contient exactement 9 lettres.", test: w => w.length === 9 },
+      { text: "Il commence par une majuscule.", test: w => /^[A-ZÉÈÀÂÊÎÔÛ]/.test(w) },
+      { text: "Il contient au moins une lettre accentuée.", test: w => /[éèêëàâäîïôöûü]/i.test(w) },
+      { text: "Il contient au moins une voyelle.", test: w => /[aeiouy]/i.test(w) },
+      { text: "Il contient une lettre 'é'.", test: w => w.includes("é") },
+      { text: "Il ne contient pas de chiffre.", test: w => !/\d/.test(w) },
+      { text: "Il ne contient pas d’espace.", test: w => !/\s/.test(w) },
+      { text: "La 4e lettre est un 'i'.", test: w => w[3]?.toLowerCase() === "i" },
+      { text: "Il ne contient aucun symbole spécial.", test: w => /^[A-Za-zéèêëàâäîïôöûü]+$/.test(w) },
+      { text: "Il contient un 'd'.", test: w => w.toLowerCase().includes("d") },
+      { text: "Il contient un 'm' ou un 'M'.", test: w => w.toLowerCase().includes("m") },
+      { text: "Il contient au moins 2 consonnes consécutives.", test: w => /[bcdfghjklmnpqrstvwxz]{2}/i.test(w) },
+      { text: "Il ne contient pas deux voyelles identiques consécutives.", test: w => !/[aeiouy]{2}/i.test(w) },
+      { text: "Il se termine par une consonne.", test: w => /[^aeiouy]$/i.test(w) },
+      { text: "Il ne contient pas de majuscule sauf la première.", test: w => w.slice(1) === w.slice(1).toLowerCase() },
+      { text: "Il contient exactement 4 voyelles.", test: w => (w.match(/[aeiouyéèêëàâäîïôöûü]/gi) || []).length === 4 },
+      { text: "Il contient la lettre 'p'.", test: w => w.toLowerCase().includes("p") },
+      { text: "La 1ère et la 9e lettre sont différentes.", test: w => w[0]?.toLowerCase() !== w[8]?.toLowerCase() },
+      { text: "Il contient au moins une lettre parmi ['a', 'e', 'i', 'o', 'u'].", test: w => /[aeiou]/i.test(w) },
+      { text: "Il contient au moins une lettre parmi ['r', 's', 't', 'l', 'n'].", test: w => /[rstln]/i.test(w) },
+      { text: "Il contient exactement 3 lettres issues du mot 'art'.", test: w => (w.match(/[art]/gi) || []).length === 3 },
+      { text: "Il n’a pas deux lettres identiques côte à côte.", test: w => !/(.)\1/.test(w) },
+      { text: "Il contient plus de lettres qu'il y a de voyelles.", test: w => w.replace(/[^a-zéèêëàâäîïôöûü]/gi, "").length > (w.match(/[aeiouyéèêëàâäîïôöûü]/gi) || []).length },
+      { text: "La 8e lettre est 'r'.", test: w => w[7]?.toLowerCase() === 'r' },
+      { text: "La première lettre est différente de la dernière.", test: w => w[0]?.toLowerCase() !== w[w.length - 1]?.toLowerCase() }
+    ];
 
-<div id="feedback"></div>
+    let passedRules = Array(rules.length).fill(false);
 
-<ul id="rulesList"></ul>
+    function checkPassword() {
+      const value = input.value.trim();
+      let allPassed = true;
 
-<script>
-(() => {
-  const finalAnswer = "Médiapart";
+      rulesList.innerHTML = "";
 
-  const questions = [
-    { text: "1) Tape un mot qui commence par la lettre 'M' (majuscule).", test: ans => ans.trim().startsWith("M") },
-    { text: "2) Tape un mot de 9 lettres.", test: ans => ans.trim().length === 9 },
-    { text: "3) Tape un mot contenant la lettre 'd' (minuscule).", test: ans => ans.includes("d") },
-    { text: "4) Tape un mot contenant la lettre accentuée 'é'.", test: ans => ans.includes("é") },
-    { text: "5) Tape un mot qui finit par la lettre 't'.", test: ans => ans.trim().endsWith("t") },
-    { text: "6) Tape un mot qui contient exactement deux lettres 'a'.", test: ans => (ans.match(/a/g) || []).length === 2 },
-    { text: "7) Tape un mot qui contient la lettre 'p'.", test: ans => ans.includes("p") },
-    { text: "8) Tape un mot où la 4e lettre est 'i' (minuscule).", test: ans => ans.length >= 4 && ans[3].toLowerCase() === "i" },
-    { text: "9) Tape un mot où la 5e lettre est 'a'.", test: ans => ans.length >= 5 && ans[4].toLowerCase() === "a" },
-    { text: "10) Tape un mot qui contient la lettre 'r'.", test: ans => ans.includes("r") },
-    { text: "11) Tape un mot qui commence par 'Mé' (avec accent).", test: ans => ans.startsWith("Mé") },
-    { text: "12) Tape un mot sans la lettre 'z'.", test: ans => !ans.includes("z") },
-    { text: "13) Tape un mot qui contient la lettre 'i'.", test: ans => ans.toLowerCase().includes("i") },
-    { text: "14) Tape un mot qui ne contient pas de majuscule sauf la première lettre.", test: ans => /^[A-Z][a-zàâäéèêëïîôöùûüç]*$/.test(ans) },
-    { text: "15) Tape un mot avec au moins une lettre accentuée.", test: ans => /[àâäéèêëïîôöùûüç]/i.test(ans) },
-    { text: "16) Tape un mot avec exactement 4 voyelles.", test: ans => (ans.match(/[aeiouyàâäéèêëïîôöùûü]/gi) || []).length === 4 },
-    { text: "17) Tape un mot qui ne contient pas la lettre 'o'.", test: ans => !ans.includes("o") },
-    { text: "18) Tape un mot dont la dernière lettre est 't'.", test: ans => ans.endsWith("t") },
-    { text: "19) Tape un mot où la lettre 'p' est avant la lettre 'r'.", test: ans => ans.indexOf("p") !== -1 && ans.indexOf("r") !== -1 && ans.indexOf("p") < ans.indexOf("r") },
-    { text: "20) Tape un mot qui contient une seule lettre 'm' (majuscule ou minuscule).", test: ans => ((ans.match(/[mM]/g) || []).length === 1) },
-    { text: "21) Tape un mot où la lettre 'a' est deux fois (au moins).", test: ans => (ans.match(/a/g) || []).length >= 2 },
-    { text: "22) Tape un mot qui ne contient pas d'espaces.", test: ans => !ans.includes(" ") },
-    { text: "23) Tape un mot qui commence par une majuscule et se termine par 't'.", test: ans => /^[A-Z].*t$/.test(ans) },
-    { text: "24) Tape un mot dont la 7e lettre est 'r'.", test: ans => ans.length >= 7 && ans[6].toLowerCase() === "r" },
-    { text: "25) Enfin, tape le mot secret (avec la bonne casse).", test: ans => ans === finalAnswer }
-  ];
+      rules.forEach((rule, i) => {
+        const li = document.createElement("li");
+        li.className = "rule";
 
-  const questionCounter = document.getElementById("questionCounter");
-  const questionText = document.getElementById("questionText");
-  const inputArea = document.getElementById("inputArea");
-  const feedback = document.getElementById("feedback");
-  const rulesList = document.getElementById("rulesList");
+        if (rule.test(value)) {
+          passedRules[i] = true;
+          li.classList.add("valid");
+        } else {
+          allPassed = false;
+          passedRules[i] = false;
+          li.classList.add("invalid");
+        }
 
-  let currentQuestion = 0;
-  let rulesStatus = new Array(questions.length).fill(false);
+        li.textContent = `${i + 1}. ${rule.text}`;
+        rulesList.appendChild(li);
+      });
 
-  function clearUI() {
-    inputArea.innerHTML = "";
-    feedback.textContent = "";
-    feedback.className = "";
-  }
-
-  function validateAnswer(ans) {
-    let allValid = true;
-    for (let i = 0; i <= currentQuestion; i++) {
-      const valid = questions[i].test(ans);
-      rulesStatus[i] = valid;
-      if (!valid) allValid = false;
-    }
-    return allValid;
-  }
-
-  function updateRulesDisplay() {
-    rulesList.innerHTML = "";
-    for (let i = 0; i <= currentQuestion; i++) {
-      const li = document.createElement("li");
-      li.textContent = questions[i].text;
-      if (rulesStatus[i]) {
-        li.classList.add("valid");
+      if (allPassed && value === correctPassword) {
+        successMessage.textContent = "🎉 Bravo ! Tu as trouvé le mot de passe : Médiapart !";
       } else {
-        li.classList.add("invalid");
+        successMessage.textContent = "";
       }
-      rulesList.appendChild(li);
-    }
-  }
-
-  function showQuestion() {
-    clearUI();
-
-    if (currentQuestion >= questions.length) {
-      questionCounter.textContent = "🎉 Bravo ! Tu as trouvé le mot secret : " + finalAnswer;
-      questionText.textContent = "";
-      inputArea.innerHTML = "";
-      return;
     }
 
-    const q = questions[currentQuestion];
-    questionCounter.textContent = `Question ${currentQuestion + 1} sur ${questions.length}`;
-    questionText.textContent = q.text;
-
-    const input = document.createElement("input");
-    input.type = "text";
-    input.autocomplete = "off";
-    input.autocorrect = "off";
-    input.autocapitalize = "none";
-    input.spellcheck = false;
-    input.placeholder = "Ta réponse ici...";
-    inputArea.appendChild(input);
-
-    const button = document.createElement("button");
-    button.textContent = "Valider";
-    inputArea.appendChild(button);
-
-    button.addEventListener("click", () => {
-      const answer = input.value.trim();
-      if (!answer) {
-        feedback.textContent = "⚠️ Entre une réponse !";
-        feedback.className = "error";
-        return;
-      }
-      const valid = validateAnswer(answer);
-      updateRulesDisplay();
-
-      if (valid) {
-        feedback.textContent = "✅ Bravo ! Règle validée.";
-        feedback.className = "success";
-        currentQuestion++;
-        setTimeout(showQuestion, 1200);
-      } else {
-        feedback.textContent = "❌ Cette réponse ne respecte pas toutes les règles.";
-        feedback.className = "error";
-      }
-    });
-
-    input.addEventListener("keypress", e => {
-      if (e.key === "Enter") button.click();
-    });
-
-    updateRulesDisplay();
-  }
-
-  showQuestion();
-})();
-</script>
-
+    checkPassword(); // Affiche toutes les règles dès le début
+  </script>
 </body>
 </html>
