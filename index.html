@@ -96,7 +96,21 @@
       { text: "Il contient un 'd'.", test: w => w.toLowerCase().includes("d") },
       { text: "Il contient un 'm' ou un 'M'.", test: w => w.toLowerCase().includes("m") },
       { text: "Il contient au moins 2 consonnes consécutives.", test: w => /[bcdfghjklmnpqrstvwxz]{2}/i.test(w) },
-      { text: "Il ne contient pas deux voyelles identiques consécutives.", test: w => !/[aeiouy]{2}/i.test(w) },
+{
+  text: "Contient deux lettres identiques non consécutives.",
+  test: str => {
+    const letters = {};
+    for (let i = 0; i < str.length; i++) {
+      const c = str[i].toLowerCase();
+      if (letters[c] !== undefined && letters[c] !== i - 1) {
+        return true;
+      }
+      letters[c] = i;
+    }
+    return false;
+  }
+}
+
       { text: "Il se termine par une consonne.", test: w => /[^aeiouy]$/i.test(w) },
       { text: "Il ne contient pas de majuscule sauf la première.", test: w => w.slice(1) === w.slice(1).toLowerCase() },
       { text: "Il contient exactement 4 voyelles.", test: w => (w.match(/[aeiouyéèêëàâäîïôöûü]/gi) || []).length === 4 },
