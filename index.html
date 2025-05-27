@@ -5,7 +5,7 @@
   <title>Jeu du mot de passe impossible corrigé</title>
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: Arial, sans-serif;
       background: #121212;
       color: #eee;
       padding: 20px;
@@ -47,16 +47,10 @@
       color: #f44336;
       font-weight: bold;
     }
-    .audio-section {
-      margin-top: 30px;
-      background: #222;
-      padding: 15px;
-      border-radius: 8px;
-    }
   </style>
 </head>
 <body>
-  <h1>🧩 Le Mot de Passe Impossible (version corrigée)</h1>
+  <h1>🧩 Le Mot de Passe Impossible</h1>
   <h2>Trouve la phrase qui respecte toutes les règles ci-dessous</h2>
 
   <ul id="rulesList"></ul>
@@ -67,22 +61,8 @@
   <p id="message"></p>
   <p id="stats"></p>
 
-  <div class="audio-section">
-    <p><strong>🎧 Écoute ce son et tape le mot que tu entends :</strong></p>
-    <audio id="audioPlayer" controls>
-      <!-- Son minimal "Félicitation" en base64 (voix synthétique minimale) -->
-      <source src="data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAwAAAwAACGluZm8AAA==" type="audio/mpeg" />
-      Ton navigateur ne supporte pas la balise audio.
-    </audio>
-    <input id="audioInput" type="text" placeholder="Tape ici le mot que tu entends..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" />
-    <p id="audioMessage"></p>
-    <button id="checkAudioBtn">Valider le mot audio</button>
-  </div>
-
   <script>
-    let audioOk = false;
-
-    // Règles modifiées sans révéler la phrase ni mots
+    // Règles corrigées, sans spoilers ni mots directs
     const rules = [
       {
         text: "La phrase commence par une majuscule.",
@@ -101,7 +81,7 @@
         test: str => /\b(je|tu|il|elle|on|nous|vous|ils|elles)\b/i.test(str),
       },
       {
-        text: "La phrase contient une contraction (exemple: t'offre, j'aime...).",
+        text: "La phrase contient une contraction (ex: t'offre, j'aime...).",
         test: str => /\b(j'|t'|l'|n'|s')\w+/i.test(str),
       },
       {
@@ -115,7 +95,7 @@
         },
       },
       {
-        text: "Le mot immédiatement après la virgule commence par la lettre J (majuscule ou minuscule).",
+        text: "Le mot après la virgule commence par la lettre J (majuscule ou minuscule).",
         test: str => {
           const afterComma = str.split(',')[1];
           if (!afterComma) return false;
@@ -124,9 +104,8 @@
         },
       },
       {
-        text: "Un mot-clé important est présent dans la phrase, mais pas en dernière position.",
+        text: "Un mot important est présent, mais pas en dernière position.",
         test: str => {
-          // On remplace "abonnement" par un mot codé (pour ne pas spoiler)
           const keyWord = "abonnement";
           if (!str.toLowerCase().includes(keyWord)) return false;
           const words = str.trim().split(/\s+/);
@@ -135,14 +114,14 @@
         },
       },
       {
-        text: "Tous les mots de la phrase contiennent au maximum 12 lettres.",
+        text: "Tous les mots contiennent au maximum 12 lettres.",
         test: str => {
           const words = str.trim().split(/\s+/).map(w => w.replace(/[.,;:!?]/g, ''));
           return words.every(w => w.length <= 12);
         },
       },
       {
-        text: "Le dernier mot contient un nombre impair de lettres compris entre 7 et 11 inclus.",
+        text: "Le dernier mot contient un nombre impair de lettres entre 7 et 11.",
         test: str => {
           const words = str.trim().split(/\s+/);
           const lastWord = words[words.length - 1].replace(/[.,;:!?]/g, '');
@@ -151,33 +130,17 @@
         },
       },
       {
-        text: "La phrase contient un mot codé avec un décalage de César +3.",
-        test: str => {
-          // Simulons la présence d’un mot codé césar +3 : on vérifie simplement qu’il y a un mot qui contient des lettres décalées
-          // Ici, pour simuler, on vérifie qu’il y a un mot avec au moins une lettre entre 'D' et 'Z' majuscule ou minuscule
-          // En vrai, cette règle est plus complexe mais on simule pour le jeu.
-          const words = str.trim().split(/\s+/);
-          return words.some(word => /[D-Zd-z]/.test(word));
-        },
-      },
-      {
-        text: "La phrase contient le mot 'offre' (peu importe la position).",
+        text: "La phrase contient le mot 'offre'.",
         test: str => str.toLowerCase().includes("offre"),
       },
       {
-        text: "Tu as validé le mot entendu dans l'audio.",
-        test: () => audioOk,
-        interactive: true,
-      },
-      {
-        text: "La phrase doit être exactement celle qui respecte toutes les règles (tu y es presque !).",
-        test: str => false, // On ne valide pas ici, laisse l’utilisateur s’amuser à trouver
+        text: "Bravo, tu as respecté toutes les règles.",
+        test: str => false, // Fin du jeu, pas de test automatique
       }
     ];
 
     let step = 0;
     let attempts = 0;
-    const startTime = Date.now();
 
     const rulesList = document.getElementById("rulesList");
     const answerInput = document.getElementById("answerInput");
@@ -196,7 +159,6 @@
 
     function validateInput(input) {
       for (let i = 0; i <= step; i++) {
-        if (rules[i].interactive) continue;
         if (!rules[i].test(input)) {
           return false;
         }
@@ -233,25 +195,6 @@
     });
 
     showRules();
-
-    // Partie audio
-    const audioPlayer = document.getElementById("audioPlayer");
-    const audioInput = document.getElementById("audioInput");
-    const audioMessage = document.getElementById("audioMessage");
-    const checkAudioBtn = document.getElementById("checkAudioBtn");
-
-    checkAudioBtn.addEventListener("click", () => {
-      const val = audioInput.value.trim().toLowerCase();
-      if (val === "félicitation" || val === "felicitation") {
-        audioOk = true;
-        audioMessage.textContent = "✅ Mot audio validé !";
-        audioMessage.className = "success";
-      } else {
-        audioOk = false;
-        audioMessage.textContent = "❌ Mot incorrect, réécoute le son et réessaie.";
-        audioMessage.className = "error";
-      }
-    });
   </script>
 </body>
 </html>
