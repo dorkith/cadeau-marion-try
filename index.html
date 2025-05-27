@@ -68,46 +68,29 @@
       { text: "Commence par une majuscule.", test: str => /^[A-ZÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/.test(str) },
       { text: "Contient exactement 9 lettres.", test: str => str.replace(/[^a-zA-ZÀ-ÿ]/g, '').length === 9 },
       { text: "Ne contient aucun chiffre.", test: str => !/\d/.test(str) },
-      { text: "Contient au moins une lettre accentuée.", test: str => [...str].filter(c => "àâäéèêëïîôöùûüç".includes(c.toLowerCase())).length >= 1 },
+      { text: "Contient une lettre accentuée en deuxième position.", test: str => /[àâäéèêëïîôöùûüç]/i.test(str[1]) },
       { text: "Ne contient pas la lettre z.", test: str => !/z/i.test(str) },
-      { text: "Contient au moins deux voyelles similaires (ex: a et a, é et é, même non consécutives).", test: str => {
-        const vowels = 'aeiouyàâäéèêëïîôöùûü';
-        const map = {};
-        for (const char of str.toLowerCase()) {
-          if (vowels.includes(char)) {
-            map[char] = (map[char] || 0) + 1;
-            if (map[char] >= 2) return true;
-          }
-        }
-        return false;
-      }},
+      { text: "Contient au moins deux lettres a.", test: str => (str.match(/a/gi) || []).length >= 2 },
       { text: "Ne se termine pas par une voyelle.", test: str => !/[aeiouyàâäéèêëïîôöùûü]$/i.test(str) },
+      { text: "Doit contenir un d.", test: str => /d/i.test(str) },
       { text: "Contient la lettre i en 4ème position.", test: str => str[3]?.toLowerCase() === 'i' },
       { text: "Contient la lettre a au moins deux fois.", test: str => (str.match(/a/gi) || []).length >= 2 },
       { text: "Ne contient pas plus de 4 voyelles.", test: str => (str.match(/[aeiouyàâäéèêëïîôöùûü]/gi) || []).length <= 4 },
-      { text: "Contient au moins une lettre en double (non consécutive).", test: str => {
-        const seen = {};
-        for (let i = 0; i < str.length; i++) {
-          const c = str[i].toLowerCase();
-          if (seen[c] !== undefined && seen[c] !== i - 1) return true;
-          seen[c] = i;
-        }
-        return false;
-      }},
+      { text: "Doit contenir la lettre p entre les a.", test: str => /a.*p.*a/i.test(str) },
       { text: "Contient au moins une lettre muette (comme le t final).", test: str => /t$/i.test(str) },
       { text: "Ne contient pas deux lettres identiques à la suite.", test: str => !/(.)\1/.test(str) },
       { text: "Contient un r après un a.", test: str => /a.*r/i.test(str) },
       { text: "Ne commence pas par une voyelle.", test: str => !/^[aeiouyàâäéèêëïîôöùûü]/i.test(str) },
       { text: "Contient une lettre en double non côte à côte.", test: str => {
-        const map = {};
-        for (let i = 0; i < str.length; i++) {
-          const c = str[i].toLowerCase();
-          if (map[c] !== undefined && i - map[c] > 1) return true;
-          map[c] = i;
-        }
-        return false;
-      }},
-      { text: "Contient un e accentué.", test: str => /[éèêë]/.test(str) },
+          const map = {};
+          for (let i = 0; i < str.length; i++) {
+            const c = str[i].toLowerCase();
+            if (map[c] !== undefined && i - map[c] > 1) return true;
+            map[c] = i;
+          }
+          return false;
+        }},
+      { text: "Contient une voyelle avec un accent aigu.", test: str => /[é]/i.test(str) },
       { text: "La lettre r est la 8e lettre.", test: str => str[7]?.toLowerCase() === 'r' },
       { text: "Le mot exact est : Médiapart", test: str => str === "Médiapart" }
     ];
