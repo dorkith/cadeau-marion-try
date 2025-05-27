@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Jeu de mot de passe cryptique</title>
   <style>
     body {
@@ -67,7 +67,7 @@
       <ul id="completedList"></ul>
     </div>
 
-    <input id="answerInput" type="text" placeholder="Tape ta réponse ici..." />
+    <input id="answerInput" type="text" placeholder="Tape ta réponse ici...">
     <button id="submitBtn">Valider</button>
 
     <p id="message"></p>
@@ -175,7 +175,10 @@
           case 11: return hasPersonalPronoun(str);
           case 12: return str.length <= 500;
           case 13: return str.split(/\s+/).every(w => /[aeiouyàâäéèêëïîôöùûü]/i.test(w));
-          case 14: return (str.match(/ /g) || []).length === 5;
+          case 14: {
+            const spaces = (str.match(/ /g) || []).length;
+            return spaces === 5;
+          }
           case 15: return !/[zZ]/.test(str);
           case 16: return str.trim().split(/\s+/)[2]?.[0]?.toLowerCase() === 't';
           case 17: return (str.match(/o/gi) || []).length >= 2;
@@ -200,16 +203,6 @@
         }
       }
 
-      // Nouvelle fonction pour valider toutes les règles jusqu'à l'étape courante
-      function checkAllRules(step, str) {
-        for (let i = 0; i <= step; i++) {
-          if (!checkRule(i, str)) {
-            return false;
-          }
-        }
-        return true;
-      }
-
       function nextRule() {
         if (step >= rules.length) {
           rulesList.innerHTML = "<li><strong>🎉 Toutes les règles ont été validées !</strong></li>";
@@ -227,7 +220,7 @@
 
         attempts++;
 
-        if (checkAllRules(step, input)) {
+        if (checkRule(step, input)) {
           correctSound.play();
           messageDiv.textContent = "✅ Règle validée !";
           messageDiv.className = "success";
