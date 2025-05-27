@@ -68,11 +68,15 @@
       { text: "La première lettre du mot est la 13ᵉ lettre de l'alphabet en majuscule.", test: str => str[0] === "M" },
       { text: "Contient exactement 9 lettres.", test: str => str.replace(/[^a-zA-ZÀ-ÿ]/g, '').length === 9 },
       { text: "Ne contient aucun chiffre.", test: str => !/\d/.test(str) },
-      { text: "Contient une lettre accentuée en deuxième position.", test: str => /[àâäéèêëïîôöùûüç]/i.test(str[1]) },
+      { text: "Doit contenir une voyelle avec un accent aigu.", test: str => /[é]/i.test(str) },
       { text: "Ne contient pas la lettre z.", test: str => !/z/i.test(str) },
       { text: "Contient au moins deux lettres a.", test: str => (str.match(/a/gi) || []).length >= 2 },
       { text: "Ne se termine pas par une voyelle.", test: str => !/[aeiouyàâäéèêëïîôöùûü]$/i.test(str) },
-      { text: "Doit contenir un d.", test: str => /d/i.test(str) },
+      { text: "La lettre d doit être avant les a.", test: str => {
+    const dIndex = str.toLowerCase().indexOf("d");
+    const aIndex = str.toLowerCase().indexOf("a");
+    return dIndex !== -1 && aIndex !== -1 && dIndex < aIndex;
+} },
       { text: "Contient la lettre i en 4ème position.", test: str => str[3]?.toLowerCase() === 'i' },
       { text: "Contient la lettre a au moins deux fois.", test: str => (str.match(/a/gi) || []).length >= 2 },
       { text: "Ne contient pas plus de 4 voyelles.", test: str => (str.match(/[aeiouyàâäéèêëïîôöùûü]/gi) || []).length <= 4 },
