@@ -147,14 +147,14 @@
 
       const finalPhrase = "Félicitations, je t'offre un abonnement Médiapart.";
 
-      // Règles avec corrections sur la 6 et 13 :
+      // Règles avec modification de la règle 6
       const rules = [
         "La réponse doit commencer par une majuscule.",
         "La réponse doit contenir une apostrophe (').",
         "La réponse doit contenir une virgule (,).",
         "La phrase doit contenir exactement 6 mots.",
         "Le premier mot doit avoir au moins 8 lettres.",
-        "La réponse doit contenir au moins 3 accents différents (sans compter répétitions, accents standard uniquement).",
+        "La réponse doit contenir au moins 3 accents au total.",
         "Le dernier mot doit commencer par la lettre M.",
         "Le dernier mot doit avoir au moins 9 lettres.",
         "La phrase doit contenir une contraction (ex: t' ou d').",
@@ -203,14 +203,13 @@
       }
 
       function countAccents(str) {
-        // Accents français courants uniquement (pas d'accents étranges)
-        const accents = new Set();
+        // Compte tous les accents dans la phrase (accents standard)
+        const accentsChars = "àáâäãåèéêëìíîïòóôöõùúûüÿç";
+        let count = 0;
         for (let c of str.toLowerCase()) {
-          if ("àáâäéèêëîïôöùûüç".includes(c)) {
-            accents.add(c);
-          }
+          if (accentsChars.includes(c)) count++;
         }
-        return accents.size;
+        return count;
       }
 
       function lastWord(str) {
@@ -388,61 +387,4 @@
           confetti.style.left = Math.random() * window.innerWidth + "px";
           confetti.style.top = -10 + "px";
           confetti.style.animationDuration = (2 + Math.random() * 3) + "s";
-          confetti.style.animationDelay = (Math.random() * 2) + "s";
-          confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
-          document.body.appendChild(confetti);
-          confetti.addEventListener("animationend", () => {
-            confetti.remove();
-          });
-        }
-      }
-
-      function updateStats() {
-        const elapsed = Math.floor((Date.now() - startTime) / 1000);
-        statsDiv.textContent = `Règle ${step + 1} / ${rules.length} | Tentatives : ${attempts} | Temps écoulé : ${elapsed}s`;
-      }
-
-      function checkAnswer(input) {
-        const valid = validators[step](input);
-        if (valid) {
-          showMessage("Bravo, règle validée !", "success");
-          step++;
-          if (step === rules.length) {
-            showMessage("🎉 Vous avez terminé toutes les règles ! 🎉", "success");
-            answerInput.disabled = true;
-            submitBtn.disabled = true;
-            launchConfetti();
-          }
-          updateStats();
-          answerInput.value = "";
-          answerInput.focus();
-        } else {
-          attempts++;
-          showMessage("Ce n'est pas la bonne réponse pour cette règle.", "error");
-          updateStats();
-        }
-      }
-
-      // Initialisation
-      renderAllRules();
-      updateStats();
-
-      submitBtn.addEventListener("click", () => {
-        const val = answerInput.value.trim();
-        if (val.length === 0) {
-          showMessage("Merci de saisir une réponse.", "error");
-          return;
-        }
-        checkAnswer(val);
-      });
-
-      answerInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          submitBtn.click();
-        }
-      });
-    })();
-  </script>
-</body>
-</html>
+          confetti.style.animatio
