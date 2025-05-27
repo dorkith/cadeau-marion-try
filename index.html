@@ -77,7 +77,7 @@
       { text: "Contient la lettre a au moins deux fois.", test: str => (str.match(/a/gi) || []).length >= 2 },
       { text: "Ne contient pas plus de 4 voyelles.", test: str => (str.match(/[aeiouyàâäéèêëïîôöùûü]/gi) || []).length <= 4 },
       { text: "Doit contenir la lettre p entre les a.", test: str => /a.*p.*a/i.test(str) },
-      { text: "Contient au moins une lettre muette (comme le t final).", test: str => /t$/i.test(str) },
+      { text: "Contient une lettre muette en dernière lettre.", test: str => /[tdsx]$/i.test(str) },
       { text: "Ne contient pas deux lettres identiques à la suite.", test: str => !/(.)\1/.test(str) },
       { text: "Contient un r après un a.", test: str => /a.*r/i.test(str) },
       { text: "Ne commence pas par une voyelle.", test: str => !/^[aeiouyàâäéèêëïîôöùûü]/i.test(str) },
