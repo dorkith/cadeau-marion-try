@@ -61,6 +61,21 @@
   #feedback.error {
     color: #f44336;
   }
+  ul#rulesList {
+    margin-top: 30px;
+    padding-left: 20px;
+  }
+  ul#rulesList li {
+    margin-bottom: 8px;
+    font-weight: 600;
+    transition: color 0.3s;
+  }
+  ul#rulesList li.valid {
+    color: #4caf50; /* vert */
+  }
+  ul#rulesList li.invalid {
+    color: #f44336; /* rouge */
+  }
 </style>
 </head>
 <body>
@@ -72,6 +87,8 @@
 <div id="inputArea"></div>
 
 <div id="feedback"></div>
+
+<ul id="rulesList"></ul>
 
 <script>
 (() => {
@@ -90,7 +107,7 @@
     { text: "10) Tape un mot qui contient la lettre 'r'.", test: ans => ans.includes("r") },
     { text: "11) Tape un mot qui commence par 'Mé' (avec accent).", test: ans => ans.startsWith("Mé") },
     { text: "12) Tape un mot sans la lettre 'z'.", test: ans => !ans.includes("z") },
-    { text: "13) Tape un mot qui contient la lettre 'i'.", test: ans => ans.includes("i") },
+    { text: "13) Tape un mot qui contient la lettre 'i'.", test: ans => ans.toLowerCase().includes("i") },
     { text: "14) Tape un mot qui ne contient pas de majuscule sauf la première lettre.", test: ans => /^[A-Z][a-zàâäéèêëïîôöùûüç]*$/.test(ans) },
     { text: "15) Tape un mot avec au moins une lettre accentuée.", test: ans => /[àâäéèêëïîôöùûüç]/i.test(ans) },
     { text: "16) Tape un mot avec exactement 3 voyelles.", test: ans => (ans.match(/[aeiouyàâäéèêëïîôöùûü]/gi) || []).length === 3 },
@@ -109,8 +126,11 @@
   const questionText = document.getElementById("questionText");
   const inputArea = document.getElementById("inputArea");
   const feedback = document.getElementById("feedback");
+  const rulesList = document.getElementById("rulesList");
 
   let currentQuestion = 0;
+  // Tableau pour stocker l'état des règles cumulées (true = validée, false = non validée)
+  let rulesStatus = new Array(questions.length).fill(false);
 
   function clearUI() {
     inputArea.innerHTML = "";
@@ -119,13 +139,29 @@
   }
 
   function validateAnswer(ans) {
-    // Valide la réponse en vérifiant toutes les règles jusqu'à currentQuestion inclus
-    for(let i = 0; i <= currentQuestion; i++) {
-      if(!questions[i].test(ans)) {
-        return false;
-      }
+    // Pour chaque règle jusqu'à currentQuestion on teste si la règle est respectée
+    // On met à jour le tableau rulesStatus
+    let allValid = true;
+    for (let i = 0; i <= currentQuestion; i++) {
+      const valid = questions[i].test(ans);
+      rulesStatus[i] = valid;
+      if (!valid) allValid = false;
     }
-    return true;
+    return allValid;
+  }
+
+  function updateRulesDisplay() {
+    rulesList.innerHTML = "";
+    for (let i = 0; i <= currentQuestion; i++) {
+      const li = document.createElement("li");
+      li.textContent = questions[i].text;
+      if (rulesStatus[i]) {
+        li.classList.add("valid");
+      } else {
+        li.classList.add("invalid");
+      }
+      rulesList.appendChild(li);
+    }
   }
 
   function showQuestion() {
@@ -134,46 +170,56 @@
     if (currentQuestion >= questions.length) {
       questionCounter.textContent = "🎉 Bravo ! Tu as trouvé le mot secret : " + finalAnswer;
       questionText.textContent = "";
+      inputArea.innerHTML = "";
       return;
     }
 
     const q = questions[currentQuestion];
-    questionCounter.textContent = `Question ${currentQuestion + 1} / ${questions.length}`;
+    questionCounter.textContent = `Question ${currentQuestion + 1} sur ${questions.length}`;
     questionText.textContent = q.text;
 
+    // Création de l'input et bouton
     const input = document.createElement("input");
     input.type = "text";
     input.autocomplete = "off";
-    input.placeholder = "Écris ta réponse ici...";
+    input.autocorrect = "off";
+    input.autocapitalize = "none";
+    input.spellcheck = false;
+    input.placeholder = "Ta réponse ici...";
     inputArea.appendChild(input);
 
-    const btn = document.createElement("button");
-    btn.textContent = "Valider";
-    inputArea.appendChild(btn);
+    const button = document.createElement("button");
+    button.textContent = "Valider";
+    inputArea.appendChild(button);
 
-    btn.onclick = () => {
-      const val = input.value.trim();
-      if (val.length === 0) {
-        feedback.textContent = "Merci de saisir une réponse.";
+    button.addEventListener("click", () => {
+      const answer = input.value.trim();
+      if (!answer) {
+        feedback.textContent = "⚠️ Entre une réponse !";
         feedback.className = "error";
         return;
       }
-      if (validateAnswer(val)) {
-        feedback.textContent = "Correct !";
+      const valid = validateAnswer(answer);
+      updateRulesDisplay();
+
+      if (valid) {
+        feedback.textContent = "✅ Bravo ! Règle validée.";
         feedback.className = "success";
         currentQuestion++;
-        setTimeout(showQuestion, 700);
+        setTimeout(showQuestion, 1200);
       } else {
-        feedback.textContent = "Mauvaise réponse, réessaie.";
+        feedback.textContent = "❌ Cette réponse ne respecte pas toutes les règles.";
         feedback.className = "error";
       }
-    };
-
-    input.addEventListener("keypress", e => {
-      if(e.key === "Enter") btn.click();
     });
 
-    input.focus();
+    // Valider aussi en appuyant sur Enter
+    input.addEventListener("keypress", e => {
+      if (e.key === "Enter") button.click();
+    });
+
+    // Afficher les règles déjà validées en vert si on a déjà progressé
+    updateRulesDisplay();
   }
 
   showQuestion();
