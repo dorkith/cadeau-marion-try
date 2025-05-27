@@ -13,25 +13,22 @@
       padding: 20px;
       min-height: 100vh;
       transition: background-color 0.5s ease;
-      overflow-x: hidden;
     }
     h1 {
       text-align: center;
       margin-bottom: 20px;
       text-shadow: 0 0 8px #7ec8e3;
     }
-    #rule {
-      max-width: 600px;
+    ul#rules {
+      max-width: 700px;
       margin: 0 auto 30px auto;
-      padding: 15px 20px;
       background: rgba(0,0,0,0.3);
+      padding: 20px;
       border-radius: 8px;
       box-shadow: 0 0 12px #004e7a;
-      font-size: 1.3em;
+      list-style: decimal inside;
+      font-size: 1.1em;
       line-height: 1.4em;
-      text-align: center;
-      min-height: 70px;
-      user-select: none;
     }
     #input-container {
       max-width: 600px;
@@ -130,7 +127,7 @@
 <body>
   <h1>The Password Game - Version Cryptique</h1>
 
-  <div id="rule"></div>
+  <ul id="rules"></ul>
 
   <div id="input-container">
     <input type="text" id="answer" placeholder="Tape ta réponse ici..." autocomplete="off" />
@@ -145,19 +142,19 @@
       const answerInput = document.getElementById("answer");
       const submitBtn = document.getElementById("submit");
       const messageDiv = document.getElementById("message");
-      const ruleDiv = document.getElementById("rule");
+      const rulesList = document.getElementById("rules");
       const statsDiv = document.getElementById("stats");
 
       const finalPhrase = "Félicitations, je t'offre un abonnement Médiapart.";
 
-      // Règles corrigées avec règles 6 et 13 fixes
+      // Règles avec corrections sur la 6 et 13 :
       const rules = [
         "La réponse doit commencer par une majuscule.",
         "La réponse doit contenir une apostrophe (').",
         "La réponse doit contenir une virgule (,).",
         "La phrase doit contenir exactement 6 mots.",
         "Le premier mot doit avoir au moins 8 lettres.",
-        "La réponse doit contenir au moins 3 accents différents (sans compter répétitions).",
+        "La réponse doit contenir au moins 3 accents différents (sans compter répétitions, accents standard uniquement).",
         "Le dernier mot doit commencer par la lettre M.",
         "Le dernier mot doit avoir au moins 9 lettres.",
         "La phrase doit contenir une contraction (ex: t' ou d').",
@@ -184,7 +181,7 @@
       let attempts = 0;
       const startTime = Date.now();
 
-      // Fonctions auxiliaires de validation
+      // Fonctions de validation
       function firstLetterIsUpper(str) {
         return /^[A-ZÀ-Ÿ]/.test(str.trim());
       }
@@ -206,10 +203,11 @@
       }
 
       function countAccents(str) {
+        // Accents français courants uniquement (pas d'accents étranges)
         const accents = new Set();
-        for (let c of str) {
-          if ("àáâãäåçèéêëìíîïòóôõöùúûüÿ".includes(c.toLowerCase())) {
-            accents.add(c.toLowerCase());
+        for (let c of str.toLowerCase()) {
+          if ("àáâäéèêëîïôöùûüç".includes(c)) {
+            accents.add(c);
           }
         }
         return accents.size;
@@ -347,8 +345,14 @@
         isFinalPhrase,
       ];
 
-      function renderRule() {
-        ruleDiv.textContent = `Règle ${step + 1} : ${rules[step]}`;
+      // Affichage de toutes les règles dès le départ
+      function renderAllRules() {
+        rulesList.innerHTML = "";
+        rules.forEach((r, i) => {
+          const li = document.createElement("li");
+          li.textContent = r;
+          rulesList.appendChild(li);
+        });
       }
 
       function showMessage(text, type = "error") {
@@ -395,7 +399,7 @@
 
       function updateStats() {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
-        statsDiv.textContent = `Étape ${step + 1} / ${rules.length} | Tentatives : ${attempts} | Temps écoulé : ${elapsed}s`;
+        statsDiv.textContent = `Règle ${step + 1} / ${rules.length} | Tentatives : ${attempts} | Temps écoulé : ${elapsed}s`;
       }
 
       function checkAnswer(input) {
@@ -408,9 +412,6 @@
             answerInput.disabled = true;
             submitBtn.disabled = true;
             launchConfetti();
-            ruleDiv.textContent = "Bravo, vous avez fini le jeu !";
-          } else {
-            renderRule();
           }
           updateStats();
           answerInput.value = "";
@@ -423,7 +424,7 @@
       }
 
       // Initialisation
-      renderRule();
+      renderAllRules();
       updateStats();
 
       submitBtn.addEventListener("click", () => {
