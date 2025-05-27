@@ -19,7 +19,23 @@
       margin-bottom: 20px;
       text-shadow: 0 0 8px #7ec8e3;
     }
-    ul#rules {
+    #completed-rules {
+      max-width: 700px;
+      margin: 0 auto 15px auto;
+      background: rgba(0,0,0,0.25);
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px #004e7a;
+      font-size: 1em;
+      line-height: 1.3em;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+    #completed-rules strong {
+      color: #7ef99f;
+      text-shadow: 0 0 6px #4bc07d;
+    }
+    #rules {
       max-width: 700px;
       margin: 0 auto 30px auto;
       background: rgba(0,0,0,0.3);
@@ -29,6 +45,7 @@
       list-style: decimal inside;
       font-size: 1.1em;
       line-height: 1.4em;
+      min-height: 60px;
     }
     #input-container {
       max-width: 600px;
@@ -104,6 +121,11 @@
 <body>
   <h1>The Password Game - Version Cryptique</h1>
 
+  <div id="completed-rules" aria-live="polite" aria-atomic="true">
+    <strong>Règles validées :</strong>
+    <ul id="completed-list" style="margin-top: 8px; padding-left: 20px;"></ul>
+  </div>
+
   <ul id="rules"></ul>
 
   <div id="input-container">
@@ -120,6 +142,7 @@
       const submitBtn = document.getElementById("submit");
       const messageDiv = document.getElementById("message");
       const rulesList = document.getElementById("rules");
+      const completedList = document.getElementById("completed-list");
       const statsDiv = document.getElementById("stats");
 
       const finalPhrase = "Félicitations, je t'offre un abonnement Médiapart.";
@@ -213,228 +236,97 @@
       }
 
       function hasPersonalPronoun(str) {
-        const pronouns = ["je", "tu", "il", "elle", "on", "moi", "toi", "lui", "me", "te"];
-        const words = str.toLowerCase().trim().split(/\s+/);
-        return pronouns.some(p => words.includes(p));
-      }
+        const pronouns = ["je", "tu", "il", "elle", "on
+  function noZ(str) {
+    return !/[zZ]/.test(str);
+  }
 
-      function maxLength500(str) {
-        return str.length <= 500;
-      }
-
-      function allWordsHaveVowels(str) {
-        const vowels = /[aeiouyàáâãäåèéêëìíîïòóôõöùúûüÿ]/i;
+  function checkRule(step, str) {
+    str = str.trim();
+    switch (step) {
+      case 0: return firstLetterIsUpper(str);
+      case 1: return containsApostrophe(str);
+      case 2: return containsComma(str);
+      case 3: return countWords(str) === 6;
+      case 4: return firstWord(str).length >= 8;
+      case 5: return countAccents(str) >= 3;
+      case 6: return lastWord(str)[0].toLowerCase() === 'm';
+      case 7: return lastWord(str).length >= 9;
+      case 8: return hasContraction(str);
+      case 9: return hasDoubleLetterMiddle(str);
+      case 10: return endsWithLetterT(str);
+      case 11: return hasPersonalPronoun(str);
+      case 12: return str.length <= 500;
+      case 13: return str.split(/\s+/).every(w => /[aeiouyàâäéèêëïîôöùûü]/i.test(w));
+      case 14: return (str.match(/ /g) || []).length === 5;
+      case 15: return noZ(str);
+      case 16: return str.trim().split(/\s+/)[2]?.[0]?.toLowerCase() === 't';
+      case 17: return (str.match(/o/gi) || []).length >= 2;
+      case 18: {
         const words = str.trim().split(/\s+/);
-        return words.every(w => vowels.test(w));
+        return words[1]?.length < words[0]?.length;
       }
-
-      function countSpaces(str) {
-        return (str.match(/ /g) || []).length;
-      }
-
-      function noLetterZ(str) {
-        return !/[zZ]/.test(str);
-      }
-
-      function thirdWordStartsWithT(str) {
+      case 19: return /\bun\b/.test(str);
+      case 20: return (lastWord(str).match(/[aeiouyàâäéèêëïîôöùûü]/gi) || []).length >= 3;
+      case 21: return /[âêîôû]/.test(str);
+      case 22: return !/^\s|\s$/.test(str);
+      case 23: {
         const words = str.trim().split(/\s+/);
-        if (words.length < 3) return false;
-        return words[2][0].toLowerCase() === "t";
+        return words[words.length - 2]?.[0]?.toLowerCase() === 'a';
       }
-
-      function containsAtLeastTwoO(str) {
-        return (str.match(/o/gi) || []).length >= 2;
+      case 24: {
+        const afterComma = str.split(',')[1]?.trim().split(/\s+/)[0];
+        return afterComma?.[0]?.toLowerCase() === 'j';
       }
+      case 25: return str === finalPhrase;
+      default: return false;
+    }
+  }
 
-      function secondWordShorterThanFirst(str) {
-        const words = str.trim().split(/\s+/);
-        if (words.length < 2) return false;
-        return words[1].length < words[0].length;
-      }
+  function nextRule() {
+    if (step >= rules.length) {
+      rulesList.innerHTML = "<li><strong>🎉 Toutes les règles ont été validées !</strong></li>";
+      messageDiv.textContent = "Bravo ! Tu as gagné 🎉";
+      messageDiv.className = "success";
+      submitBtn.disabled = true;
+      return;
+    }
+    rulesList.innerHTML = `<li>${rules[step]}</li>`;
+  }
 
-      function containsWordUn(str) {
-        return /\bun\b/i.test(str);
-      }
+  submitBtn.addEventListener("click", () => {
+    const input = answerInput.value.trim();
+    if (!input) return;
 
-      function lastWordHasAtLeast3Vowels(str) {
-        const w = lastWord(str).toLowerCase();
-        const vowels = w.match(/[aeiouyàáâãäåèéêëìíîïòóôõöùúûüÿ]/gi) || [];
-        return vowels.length >= 3;
-      }
+    attempts++;
 
-      function containsCircumflexAccent(str) {
-        return /[\^êâîôû]/i.test(str);
-      }
+    if (checkRule(step, input)) {
+      messageDiv.textContent = "✅ Règle validée !";
+      messageDiv.className = "success";
+      document.body.classList.add("success-flash");
 
-      function noSpaceAtStartOrEnd(str) {
-        return str === str.trim();
-      }
+      const validated = document.createElement("li");
+      validated.textContent = rules[step];
+      completedList.appendChild(validated);
 
-      function penultimateWordStartsWithA(str) {
-        const words = str.trim().split(/\s+/);
-        if (words.length < 2) return false;
-        return words[words.length - 2][0].toLowerCase() === "a";
-      }
+      step++;
+      nextRule();
+    } else {
+      messageDiv.textContent = "❌ Essaie encore, ce n'est pas encore bon.";
+      messageDiv.className = "error";
+      document.body.classList.add("error-flash");
+    }
 
-      function wordAfterCommaStartsWithJ(str) {
-        const idx = str.indexOf(",");
-        if (idx === -1) return false;
-        const afterComma = str.slice(idx + 1).trim();
-        if (!afterComma) return false;
-        return afterComma[0].toLowerCase() === "j";
-      }
+    setTimeout(() => {
+      document.body.classList.remove("success-flash", "error-flash");
+    }, 1000);
 
-      function isFinalPhrase(str) {
-        return str.trim() === finalPhrase;
-      }
+    statsDiv.textContent = `Tentatives : ${attempts} | Temps écoulé : ${Math.floor((Date.now() - startTime) / 1000)} sec`;
+  });
 
-      const validators = [
-        firstLetterIsUpper,
-        containsApostrophe,
-        containsComma,
-        (s) => countWords(s) === 6,
-        (s) => firstWord(s).length >= 8,
-        (s) => countAccents(s) >= 3, // règle modifiée ici : au moins 3 accents au total
-        (s) => lastWord(s).toLowerCase().startsWith("m"),
-        (s) => lastWord(s).length >= 9,
-        hasContraction,
-        hasDoubleLetterMiddle,
-        endsWithLetterT,
-        hasPersonalPronoun,
-        maxLength500, // règle 13 modifiée ici pour limiter à 500 caractères max
-        allWordsHaveVowels,
-        (s) => countSpaces(s) === 5,
-        noLetterZ,
-        thirdWordStartsWithT,
-        containsAtLeastTwoO,
-        secondWordShorterThanFirst,
-        containsWordUn,
-        lastWordHasAtLeast3Vowels,
-        containsCircumflexAccent,
-        noSpaceAtStartOrEnd,
-        penultimateWordStartsWithA,
-        wordAfterCommaStartsWithJ,
-        isFinalPhrase,
-      ];
+  answerInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") submitBtn.click();
+  });
 
-      function renderAllRules() {
-        rulesList.innerHTML = "";
-        const li = document.createElement("li");
-        li.textContent = rules[step];
-        rulesList.appendChild(li);
-      }
-
-      function showMessage(text, type = "error") {
-        messageDiv.textContent = text;
-        messageDiv.className = "";
-        if (type === "error") {
-          messageDiv.classList.add("error");
-          flashError();
-        } else if (type === "success") {
-          messageDiv.classList.add("success");
-          flashSuccess();
-        }
-      }
-
-      function flashError() {
-        document.body.classList.remove("error-flash");
-        void document.body.offsetWidth;
-        document.body.classList.add("error-flash");
-        playErrorSound();
-      }
-
-      function flashSuccess() {
-        document.body.classList.remove("success-flash");
-        void document.body.offsetWidth;
-        document.body.classList.add("success-flash");
-        playSuccessSound();
-      }
-
-      function playErrorSound() {
-        const context = new AudioContext();
-        const oscillator = context.createOscillator();
-        oscillator.type = "square";
-        oscillator.frequency.setValueAtTime(200, context.currentTime);
-        oscillator.connect(context.destination);
-        oscillator.start();
-        oscillator.stop(context.currentTime + 0.2);
-      }
-
-      function playSuccessSound() {
-        const context = new AudioContext();
-        const oscillator = context.createOscillator();
-        oscillator.type = "triangle";
-        oscillator.frequency.setValueAtTime(440, context.currentTime);
-        oscillator.connect(context.destination);
-        oscillator.start();
-        oscillator.stop(context.currentTime + 0.3);
-      }
-
-      function launchConfetti() {
-        const colors = ['#ff0a54','#ff477e','#ff85a1','#fbb1b1','#f9bec7'];
-        for (let i = 0; i < 100; i++) {
-          const confetti = document.createElement("div");
-          confetti.classList.add("confetti-piece");
-          confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-          confetti.style.left = Math.random() * window.innerWidth + "px";
-          confetti.style.top = -10 + "px";
-          confetti.style.animationDuration = (2 + Math.random() * 3) + "s";
-          confetti.style.animationDelay = (Math.random() * 2) + "s";
-          confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
-          document.body.appendChild(confetti);
-          confetti.addEventListener("animationend", () => {
-            confetti.remove();
-          });
-        }
-      }
-
-      function updateStats() {
-        const elapsed = Math.floor((Date.now() - startTime) / 1000);
-        statsDiv.textContent = `Règle ${step + 1} / ${rules.length} | Tentatives : ${attempts} | Temps écoulé : ${elapsed}s`;
-      }
-
-      function checkAnswer(input) {
-        const valid = validators[step](input);
-        if (valid) {
-          showMessage("Bravo, règle validée !", "success");
-          step++;
-          if (step === rules.length) {
-            showMessage("🎉 Vous avez terminé toutes les règles ! 🎉", "success");
-            answerInput.disabled = true;
-            submitBtn.disabled = true;
-            launchConfetti();
-          } else {
-            renderAllRules();
-          }
-          updateStats();
-          answerInput.value = "";
-          answerInput.focus();
-        } else {
-          attempts++;
-          showMessage("Ce n'est pas la bonne réponse pour cette règle.", "error");
-          updateStats();
-        }
-      }
-
-      renderAllRules();
-      updateStats();
-
-      submitBtn.addEventListener("click", () => {
-        const val = answerInput.value.trim();
-        if (val.length === 0) {
-          showMessage("Merci de saisir une réponse.", "error");
-          return;
-        }
-        checkAnswer(val);
-      });
-
-      answerInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          submitBtn.click();
-        }
-      });
-    })();
-  </script>
-</body>
-</html>
+  nextRule();
+})();
