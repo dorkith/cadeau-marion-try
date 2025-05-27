@@ -2,31 +2,173 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<title>Jeu mot de passe progressif (25 règles subtiles)</title>
+<title>Jeu mot de passe progressif (25 règles)</title>
 <style>
-  body { font-family: Arial, sans-serif; max-width: 600px; margin: 2em auto; }
-  input { width: 100%; padding: 0.5em; font-size: 1.2em; }
-  button { margin-top: 1em; padding: 0.7em 1.2em; font-size: 1.1em; }
-  .success { color: green; margin-top: 1em; }
-  .error { color: red; margin-top: 1em; }
-  .rule { font-style: italic; margin-top: 1em; }
+  @import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
+
+  body {
+    font-family: 'Patrick Hand', cursive, Arial, sans-serif;
+    background: linear-gradient(135deg, #4e54c8, #8f94fb);
+    color: #fff;
+    max-width: 650px;
+    margin: 2em auto;
+    padding: 1.5em 2em;
+    border-radius: 15px;
+    box-shadow: 0 0 40px rgba(255, 255, 255, 0.3);
+    display: flex;
+    flex-direction: column;
+    height: 90vh;
+  }
+
+  h2 {
+    text-align: center;
+    font-weight: 700;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+  }
+
+  p {
+    text-align: center;
+    font-size: 1.1em;
+    margin-bottom: 1em;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.3);
+  }
+
+  #rulesContainer {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 1em;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 1em;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.3);
+  }
+
+  .rule-item {
+    margin-bottom: 1em;
+    padding: 0.6em 1em;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.2);
+    transition: background-color 0.3s ease;
+    font-size: 1.2em;
+  }
+
+  .rule-item.current {
+    background: #ffd700;
+    color: #4e54c8;
+    font-weight: 700;
+    box-shadow: 0 0 12px #ffea00;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 0.7em 1em;
+    font-size: 1.4em;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    box-shadow: 0 0 10px rgba(255,255,255,0.5);
+    transition: box-shadow 0.3s ease;
+  }
+
+  input[type="text"]:focus {
+    box-shadow: 0 0 15px #ffd700;
+  }
+
+  button {
+    margin-top: 0.8em;
+    padding: 0.9em 2em;
+    font-size: 1.3em;
+    background: #ffd700;
+    color: #4e54c8;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 5px 15px #b38f00;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    width: 100%;
+  }
+
+  button:hover:not(:disabled) {
+    background-color: #ffea00;
+    color: #3a3f87;
+  }
+
+  button:disabled {
+    background-color: #999;
+    color: #555;
+    cursor: default;
+  }
+
+  #message {
+    margin-top: 1em;
+    font-size: 1.2em;
+    min-height: 1.6em;
+    text-align: center;
+    font-weight: 600;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+  }
+
+  .success {
+    color: #a5d6a7;
+  }
+
+  .error {
+    color: #ef9a9a;
+  }
+
+  #stats {
+    margin-top: 0.7em;
+    font-size: 1em;
+    text-align: center;
+    color: #ddd;
+    user-select: none;
+  }
+
+  /* Confettis animation */
+  .confetti-piece {
+    position: fixed;
+    width: 10px;
+    height: 15px;
+    background-color: #ffd700;
+    opacity: 0.9;
+    z-index: 9999;
+    top: -20px;
+    animation-name: fallConfetti;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-duration: 4s;
+    border-radius: 3px;
+    filter: drop-shadow(0 0 2px #b38f00);
+  }
+
+  @keyframes fallConfetti {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+  }
 </style>
 </head>
 <body>
 
-<h2>Jeu du mot de passe progressif (25 règles subtiles)</h2>
+<h2>Jeu mot de passe progressif (25 règles subtiles)</h2>
 <p>Construis la phrase finale en respectant chaque contrainte, une par une. Les contraintes s'empilent !</p>
 
-<div id="rule" class="rule"></div>
+<div id="rulesContainer">
+  <!-- Les règles validées + la courante s'affichent ici -->
+</div>
 
 <input type="text" id="answer" placeholder="Ta réponse ici" autofocus autocomplete="off" />
 <button id="submitBtn">Valider</button>
 
 <div id="message"></div>
+<div id="stats">Essais : 0 | Temps écoulé : 0:00</div>
 
 <script>
+  // Phrase finale
   const finalPhrase = "Félicitations, je t'offre un abonnement Médiapart.";
 
+  // Règles cumulatives
   const rules = [
     "La première lettre de la réponse est une majuscule.",
     "La réponse contient au moins une voyelle accentuée (é, è, ê, etc.).",
@@ -52,172 +194,289 @@
     "Le dernier mot est exactement 'Médiapart'.",
     "Le texte contient le mot 'abonnement'.",
     "La phrase est sensible à la casse (majuscule et minuscules).",
-    "La phrase finale exacte est :<br><strong>Félicitations, je t'offre un abonnement Médiapart.</strong>"
+    "La phrase finale exacte est : Félicitations, je t'offre un abonnement Médiapart."
   ];
 
-  let step = 0;
-
-  const ruleDiv = document.getElementById('rule');
+  // Éléments DOM
+  const rulesContainer = document.getElementById('rulesContainer');
   const answerInput = document.getElementById('answer');
   const submitBtn = document.getElementById('submitBtn');
   const messageDiv = document.getElementById('message');
+  const statsDiv = document.getElementById('stats');
 
-  function countWords(str) {
-    return str.trim().split(/\s+/).length;
+  let step = 0;
+  let attempts = 0;
+  let startTime = Date.now();
+  let timerInterval;
+
+  // Sons (synthèse simple)
+  function playSound(type) {
+    try {
+      const context = new AudioContext();
+      const o = context.createOscillator();
+      const g = context.createGain();
+      o.connect(g);
+      g.connect(context.destination);
+
+      if(type === 'success'){
+        o.frequency.value = 880;
+        g.gain.setValueAtTime(0.2, context.currentTime);
+        o.start();
+        o.stop(context.currentTime + 0.15);
+      } else if(type === 'error'){
+        o.frequency.value = 220;
+        g.gain.setValueAtTime(0.2, context.currentTime);
+        o.start();
+        o.stop(context.currentTime + 0.3);
+      }
+    } catch(e) {
+      // AudioContext peut ne pas être dispo (mobile ou bloqueur)
+      console.log('Audio non supporté ou bloqué');
+    }
   }
 
   function countLetters(str) {
     return str.replace(/\s/g, '').length;
   }
 
-  function hasDoubleLetter(str, letter) {
-    const re = new RegExp(letter+letter, 'i');
-    return re.test(str);
+  // Correction règle 6 : récupère le premier mot avec un split propre
+  function getFirstWord(text){
+    // Split sur espace multiple, filtre les vides
+    const words = text.trim().split(/\s+/);
+    return words[0] || "";
   }
 
-  function checkCapitalization(word, shouldBeCapital) {
-    if (shouldBeCapital) {
-      return /^[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ]/.test(word);
-    } else {
-      return /^[a-zàâéèêëîïôùûüç]/.test(word);
-    }
+  // Correction règle 9: au moins un mot de 2 lettres
+  function hasWordMinTwoLetters(text){
+    const words = text.trim().split(/\s+/);
+    return words.some(w => w.length >= 2);
   }
 
+  // Correction règle 12 : mot qui commence par 'j' minuscule
+  function hasWordStartingJMin(text){
+    const words = text.trim().split(/\s+/);
+    return words.some(w => w[0] === 'j');
+  }
+
+  // Check réponse selon la règle courante
   function checkAnswer(answer) {
-    // On vérifie toutes les règles précédentes aussi
+    const a = answer;
+
+    // Les règles s'accumulent (toutes doivent être vraies)
+    // Pour appliquer ça proprement, on va vérifier toutes les règles jusqu'à la règle courante
+
     for(let i=0; i<=step; i++){
-      if(!checkSingleRule(answer, i)) return false;
+      switch(i){
+        case 0: // Majuscule initiale
+          if(!/^[A-ZÀ-ÖÙ-Ý]/.test(a)) return false;
+          break;
+        case 1: // Voyelle accentuée
+          if(!/[éèêëàâäîïôöùûüÿ]/i.test(a)) return false;
+          break;
+        case 2: // Apostrophe
+          if(!a.includes("'")) return false;
+          break;
+        case 3: // Virgule
+          if(!a.includes(",")) return false;
+          break;
+        case 4: // longueur 30-40 chars
+          if(a.length < 30 || a.length > 40) return false;
+          break;
+        case 5: // 6 espaces
+          if((a.match(/ /g) || []).length !== 6) return false;
+          break;
+        case 6: // 1er mot min 6 lettres
+          if(getFirstWord(a).length < 6) return false;
+          break;
+        case 7: // dernier char '.'
+          if(!a.endsWith('.')) return false;
+          break;
+        case 8: // mot de 2 lettres min
+          if(!hasWordMinTwoLetters(a)) return false;
+          break;
+        case 9: // mot avec double 't'
+          if(!/\b\w*t{2}\w*\b/i.test(a)) return false;
+          break;
+        case 10: // pas de 'z'
+          if(/[zZ]/.test(a)) return false;
+          break;
+        case 11: // mot commence par 'j' minuscule
+          if(!hasWordStartingJMin(a)) return false;
+          break;
+        case 12: // 'o' au moins 3 fois
+          if((a.match(/o/gi) || []).length < 3) return false;
+          break;
+        case 13: // mot avec apostrophe commence par 't'
+          if(!/\bt['’][a-zA-Z]+\b/i.test(a)) return false;
+          break;
+        case 14: // virgule entre 1er et 2eme mot
+          {
+            const words = a.trim().split(/\s+/);
+            if(words.length < 2) return false;
+            const first = words[0];
+            const second = words[1];
+            // Vérifier si la virgule est juste après le premier mot (avec ou sans espace)
+            // Donc vérifier si dans la chaîne originale la virgule est juste après first mot (sans espace)
+            // Exemple "Félicitations, je"
+            const idxFirst = a.indexOf(first);
+            const idxComma = a.indexOf(',');
+            if(idxComma !== idxFirst + first.length) return false;
+          }
+          break;
+        case 15: // nombre lettres sans espaces = 32
+          if(countLetters(a) !== 32) return false;
+          break;
+        case 16: // pas de majuscule autre que 1er et dernier mot
+          {
+            const words = a.trim().split(/\s+/);
+            if(words.length < 2) return false;
+            const middleWords = words.slice(1, -1).join(' ');
+            if(/[A-ZÀ-ÖÙ-Ý]/.test(middleWords)) return false;
+          }
+          break;
+        case 17: // dernier mot commence par M
+          {
+            const words = a.trim().split(/\s+/);
+            const lastWord = words[words.length -1].replace(/[.,!?;:]/g, '');
+            if(!/^M/.test(lastWord)) return false;
+          }
+          break;
+        case 18: // mot avec double 't' avant dernier mot
+          {
+            const words = a.trim().split(/\s+/);
+            // Trouver mot avec double 't'
+            const idxDoubleT = words.findIndex(w => /t{2}/i.test(w));
+            if(idxDoubleT === -1) return false;
+            if(idxDoubleT >= words.length - 1) return false;
+          }
+          break;
+        case 19: // mot 'je' dans le texte
+          if(!/\bje\b/.test(a)) return false;
+          break;
+        case 20: // mot avec apostrophe après 'je'
+          {
+            const words = a.trim().split(/\s+/);
+            const idxJe = words.findIndex(w => w.toLowerCase() === "je");
+            if(idxJe === -1 || idxJe + 1 >= words.length) return false;
+            if(!/\bt['’][a-z]+\b/i.test(words[idxJe + 1])) return false;
+          }
+          break;
+        case 21: // dernier mot = Médiapart
+          {
+            const words = a.trim().split(/\s+/);
+            const lastWord = words[words.length -1].replace(/[.,!?;:]/g, '');
+            if(lastWord !== "Médiapart") return false;
+          }
+          break;
+        case 22: // contient 'abonnement'
+          if(!/\babonnement\b/i.test(a)) return false;
+          break;
+        case 23: // sensible à la casse
+          // Pour forcer casse exacte, on peut comparer à la phrase finale jusqu'à step
+          // Pour simplifier, on va juste exiger la casse exacte sur tout le texte (au moins jusqu'à step)
+          if(a !== a.trim()) return false;
+          // et vérifier qu'il y a au moins une majuscule (pas juste tout en minuscules)
+          if(!/[A-ZÀ-ÖÙ-Ý]/.test(a)) return false;
+          break;
+        case 24: // phrase exacte
+          if(a !== finalPhrase) return false;
+          break;
+        default:
+          return false;
+      }
     }
+
     return true;
   }
 
-  function checkSingleRule(answer, ruleIndex) {
-    switch(ruleIndex) {
-      case 0:
-        // Première lettre majuscule
-        return /^[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ]/.test(answer);
-      case 1:
-        // Au moins une voyelle accentuée
-        return /[éèêëàâîïôûù]/i.test(answer);
-      case 2:
-        // Contient apostrophe
-        return answer.includes("'");
-      case 3:
-        // Contient virgule
-        return answer.includes(",");
-      case 4:
-        // 30 à 40 caractères
-        return answer.length >=30 && answer.length <=40;
-      case 5:
-        // 6 espaces
-        return (answer.match(/ /g) || []).length === 6;
-      case 6:
-        // Premier mot >= 6 lettres
-        const firstWord = answer.trim().split(' ')[0];
-        return firstWord.length >=6;
-      case 7:
-        // Finit par point
-        return answer.endsWith('.');
-      case 8:
-        // Au moins un mot de 2 lettres
-        return answer.trim().split(' ').some(w => w.length === 2);
-      case 9:
-        // Un mot avec double 't'
-        return /tt/.test(answer);
-      case 10:
-        // Pas de lettre z
-        return !/z/i.test(answer);
-      case 11:
-        // Mot qui commence par 'j' minuscule
-        return answer.trim().split(' ').some(w => /^j/.test(w));
-      case 12:
-        // Lettre o au moins 3 fois
-        return (answer.match(/o/gi) || []).length >= 3;
-      case 13:
-        // Mot avec apostrophe commence par 't'
-        const wordsWithApostrophe = answer.match(/\b\w+'\w+\b/g) || [];
-        return wordsWithApostrophe.some(w => /^t/.test(w));
-      case 14:
-        // Virgule entre 1er et 2e mot
-        const commaIndex = answer.indexOf(',');
-        const firstSpace = answer.indexOf(' ');
-        return commaIndex > firstSpace && commaIndex < answer.indexOf(' ', firstSpace + 1);
-      case 15:
-        // 32 lettres (sans espaces)
-        return countLetters(answer) === 32;
-      case 16:
-        // Majuscule seulement au premier et dernier mot
-        const words = answer.trim().split(' ');
-        for(let i=1; i<words.length-1; i++){
-          if(/[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ]/.test(words[i][0])){
-            return false;
-          }
-        }
-        return true;
-      case 17:
-        // Dernier mot commence par M
-        const lastWord = answer.trim().split(' ').slice(-1)[0].replace(/\.$/, '');
-        return /^M/.test(lastWord);
-      case 18:
-        // Mot avec double t avant dernier mot
-        const allWords = answer.trim().split(' ');
-        const doubleTWordIndex = allWords.findIndex(w => /tt/.test(w));
-        return doubleTWordIndex !== -1 && doubleTWordIndex < allWords.length -1;
-      case 19:
-        // Mot 'je' dans le texte
-        return /\bje\b/.test(answer);
-      case 20:
-        // Mot avec apostrophe juste après 'je'
-        // on cherche "je t'offre"
-        return /\bje t'offre\b/.test(answer);
-      case 21:
-        // Dernier mot = Médiapart
-        const lw = answer.trim().split(' ').slice(-1)[0].replace(/\.$/, '');
-        return lw === 'Médiapart';
-      case 22:
-        // Contient mot 'abonnement'
-        return /\babonnement\b/.test(answer);
-      case 23:
-        // Sensible à la casse (on vérifie que la réponse est exactement celle qu'on attend pour les maj/min)
-        // Ici on compare avec la phrase finale mais en ne validant que si les lettres en maj/min sont respectées
-        // Simplifions en validant que la phrase est égale au final en casse
-        // La vraie vérification finale est en règle 24
-        return true; 
-      case 24:
-        // Phrase finale exacte
-        return answer === finalPhrase;
-      default:
-        return false;
+  // Affiche toutes les règles validées + règle courante
+  function showRules() {
+    rulesContainer.innerHTML = '';
+
+    for(let i=0; i<=step; i++) {
+      const div = document.createElement('div');
+      div.classList.add('rule-item');
+      if(i === step) div.classList.add('current');
+      div.textContent = `Règle ${i+1}: ${rules[i]}`;
+      rulesContainer.appendChild(div);
+    }
+
+    // Scroll vers le bas pour afficher la règle courante
+    rulesContainer.scrollTop = rulesContainer.scrollHeight;
+  }
+
+  // Mise à jour stats essais et timer
+  function updateStats() {
+    const elapsedMs = Date.now() - startTime;
+    const seconds = Math.floor(elapsedMs / 1000);
+    const min = Math.floor(seconds / 60);
+    const sec = seconds % 60;
+    statsDiv.textContent = `Essais : ${attempts} | Temps écoulé : ${min}:${sec.toString().padStart(2,'0')}`;
+  }
+
+  // Confettis animation à la fin
+  function createConfetti() {
+    const colors = ['#ffd700', '#ff6347', '#3cb371', '#00bfff', '#ff69b4'];
+    for(let i=0; i<80; i++){
+      const confetti = document.createElement('div');
+      confetti.classList.add('confetti-piece');
+      confetti.style.backgroundColor = colors[Math.floor(Math.random()*colors.length)];
+      confetti.style.left = Math.random()*100 + 'vw';
+      confetti.style.animationDuration = (2 + Math.random()*3) + 's';
+      confetti.style.animationDelay = (Math.random()*3) + 's';
+      confetti.style.width = (5 + Math.random()*7) + 'px';
+      confetti.style.height = (8 + Math.random()*10) + 'px';
+      confetti.style.borderRadius = Math.random() > 0.5 ? '0' : '50% / 50%';
+      document.body.appendChild(confetti);
+
+      setTimeout(() => {
+        confetti.remove();
+      }, 6000);
     }
   }
+
+  // Initialisation
+  showRules();
+  timerInterval = setInterval(updateStats, 1000);
 
   submitBtn.addEventListener('click', () => {
     const answer = answerInput.value.trim();
-
-    if (checkAnswer(answer)) {
-      step++;
-      if (step === rules.length) {
-        messageDiv.innerHTML = "<span class='success'>Bravo ! Tu as réussi à construire la phrase finale ! 🎉</span>";
-        ruleDiv.textContent = "";
-        answerInput.disabled = true;
-        submitBtn.disabled = true;
-      } else {
-        messageDiv.innerHTML = "<span class='success'>Correct ! Passons à la règle suivante.</span>";
-        showRule();
-      }
-    } else {
-      messageDiv.innerHTML = "<span class='error'>Oups, cette réponse ne respecte pas la règle. Essaie encore !</span>";
+    if(answer.length === 0){
+      messageDiv.textContent = "Merci d'écrire une réponse.";
+      messageDiv.className = "error";
+      playSound('error');
+      return;
     }
+    attempts++;
+    if(checkAnswer(answer)){
+      playSound('success');
+      messageDiv.textContent = "Correct !";
+      step++;
+      if(step >= rules.length){
+        // Fin du jeu
+        messageDiv.innerHTML = `<strong>🎉 Bravo ! Vous avez complété toutes les règles ! 🎉</strong>`;
+        createConfetti();
+        submitBtn.disabled = true;
+        answerInput.disabled = true;
+        clearInterval(timerInterval);
+        return;
+      }
+      showRules();
+      answerInput.value = '';
+    } else {
+      messageDiv.textContent = "Erreur, essaie encore.";
+      messageDiv.className = "error";
+      playSound('error');
+    }
+    updateStats();
   });
 
-  function showRule() {
-    ruleDiv.innerHTML = `Règle #${step + 1} : ${rules[step]}`;
-    messageDiv.textContent = "";
-    answerInput.value = "";
-    answerInput.focus();
-  }
-
-  showRule();
+  // Entrée clavier = validation
+  answerInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){
+      submitBtn.click();
+    }
+  });
 </script>
 
 </body>
