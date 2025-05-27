@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Jeu de mot de passe cryptique</title>
   <style>
     body {
@@ -67,7 +67,7 @@
       <ul id="completedList"></ul>
     </div>
 
-    <input id="answerInput" type="text" placeholder="Tape ta réponse ici...">
+    <input id="answerInput" type="text" placeholder="Tape ta réponse ici..." />
     <button id="submitBtn">Valider</button>
 
     <p id="message"></p>
@@ -200,6 +200,16 @@
         }
       }
 
+      // Nouvelle fonction pour valider toutes les règles jusqu'à l'étape courante
+      function checkAllRules(step, str) {
+        for (let i = 0; i <= step; i++) {
+          if (!checkRule(i, str)) {
+            return false;
+          }
+        }
+        return true;
+      }
+
       function nextRule() {
         if (step >= rules.length) {
           rulesList.innerHTML = "<li><strong>🎉 Toutes les règles ont été validées !</strong></li>";
@@ -217,7 +227,7 @@
 
         attempts++;
 
-        if (checkRule(step, input)) {
+        if (checkAllRules(step, input)) {
           correctSound.play();
           messageDiv.textContent = "✅ Règle validée !";
           messageDiv.className = "success";
