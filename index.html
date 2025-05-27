@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>The Password Game - Version cryptique</title>
+  <title>The Password Game - Version Cryptique</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -99,29 +99,6 @@
       0%, 100% { background-color: #1e3c72; }
       50% { background-color: #2ef59e; }
     }
-    /* Confetti pieces */
-    .confetti-piece {
-      position: fixed;
-      width: 10px;
-      height: 10px;
-      opacity: 0.9;
-      z-index: 9999;
-      pointer-events: none;
-      animation-name: confetti-fall;
-      animation-timing-function: ease-out;
-      animation-iteration-count: 1;
-      animation-fill-mode: forwards;
-    }
-    @keyframes confetti-fall {
-      0% {
-        transform: translateY(0) rotate(0deg);
-        opacity: 1;
-      }
-      100% {
-        transform: translateY(100vh) rotate(720deg);
-        opacity: 0;
-      }
-    }
   </style>
 </head>
 <body>
@@ -147,7 +124,6 @@
 
       const finalPhrase = "Félicitations, je t'offre un abonnement Médiapart.";
 
-      // Règles avec modification de la règle 6
       const rules = [
         "La réponse doit commencer par une majuscule.",
         "La réponse doit contenir une apostrophe (').",
@@ -181,7 +157,6 @@
       let attempts = 0;
       const startTime = Date.now();
 
-      // Fonctions de validation
       function firstLetterIsUpper(str) {
         return /^[A-ZÀ-Ÿ]/.test(str.trim());
       }
@@ -203,7 +178,6 @@
       }
 
       function countAccents(str) {
-        // Compte tous les accents dans la phrase (accents standard)
         const accentsChars = "àáâäãåèéêëìíîïòóôöõùúûüÿç";
         let count = 0;
         for (let c of str.toLowerCase()) {
@@ -314,21 +288,20 @@
         return str.trim() === finalPhrase;
       }
 
-      // Tableau des validateurs
       const validators = [
         firstLetterIsUpper,
         containsApostrophe,
         containsComma,
         (s) => countWords(s) === 6,
         (s) => firstWord(s).length >= 8,
-        (s) => countAccents(s) >= 3,
+        (s) => countAccents(s) >= 3, // règle modifiée ici : au moins 3 accents au total
         (s) => lastWord(s).toLowerCase().startsWith("m"),
         (s) => lastWord(s).length >= 9,
         hasContraction,
         hasDoubleLetterMiddle,
         endsWithLetterT,
         hasPersonalPronoun,
-        maxLength500,
+        maxLength500, // règle 13 modifiée ici pour limiter à 500 caractères max
         allWordsHaveVowels,
         (s) => countSpaces(s) === 5,
         noLetterZ,
@@ -344,14 +317,11 @@
         isFinalPhrase,
       ];
 
-      // Affichage de toutes les règles dès le départ
       function renderAllRules() {
         rulesList.innerHTML = "";
-        rules.forEach((r, i) => {
-          const li = document.createElement("li");
-          li.textContent = r;
-          rulesList.appendChild(li);
-        });
+        const li = document.createElement("li");
+        li.textContent = rules[step];
+        rulesList.appendChild(li);
       }
 
       function showMessage(text, type = "error") {
@@ -370,12 +340,34 @@
         document.body.classList.remove("error-flash");
         void document.body.offsetWidth;
         document.body.classList.add("error-flash");
+        playErrorSound();
       }
 
       function flashSuccess() {
         document.body.classList.remove("success-flash");
         void document.body.offsetWidth;
         document.body.classList.add("success-flash");
+        playSuccessSound();
+      }
+
+      function playErrorSound() {
+        const context = new AudioContext();
+        const oscillator = context.createOscillator();
+        oscillator.type = "square";
+        oscillator.frequency.setValueAtTime(200, context.currentTime);
+        oscillator.connect(context.destination);
+        oscillator.start();
+        oscillator.stop(context.currentTime + 0.2);
+      }
+
+      function playSuccessSound() {
+        const context = new AudioContext();
+        const oscillator = context.createOscillator();
+        oscillator.type = "triangle";
+        oscillator.frequency.setValueAtTime(440, context.currentTime);
+        oscillator.connect(context.destination);
+        oscillator.start();
+        oscillator.stop(context.currentTime + 0.3);
       }
 
       function launchConfetti() {
@@ -387,4 +379,62 @@
           confetti.style.left = Math.random() * window.innerWidth + "px";
           confetti.style.top = -10 + "px";
           confetti.style.animationDuration = (2 + Math.random() * 3) + "s";
-          confetti.style.animatio
+          confetti.style.animationDelay = (Math.random() * 2) + "s";
+          confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+          document.body.appendChild(confetti);
+          confetti.addEventListener("animationend", () => {
+            confetti.remove();
+          });
+        }
+      }
+
+      function updateStats() {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        statsDiv.textContent = `Règle ${step + 1} / ${rules.length} | Tentatives : ${attempts} | Temps écoulé : ${elapsed}s`;
+      }
+
+      function checkAnswer(input) {
+        const valid = validators[step](input);
+        if (valid) {
+          showMessage("Bravo, règle validée !", "success");
+          step++;
+          if (step === rules.length) {
+            showMessage("🎉 Vous avez terminé toutes les règles ! 🎉", "success");
+            answerInput.disabled = true;
+            submitBtn.disabled = true;
+            launchConfetti();
+          } else {
+            renderAllRules();
+          }
+          updateStats();
+          answerInput.value = "";
+          answerInput.focus();
+        } else {
+          attempts++;
+          showMessage("Ce n'est pas la bonne réponse pour cette règle.", "error");
+          updateStats();
+        }
+      }
+
+      renderAllRules();
+      updateStats();
+
+      submitBtn.addEventListener("click", () => {
+        const val = answerInput.value.trim();
+        if (val.length === 0) {
+          showMessage("Merci de saisir une réponse.", "error");
+          return;
+        }
+        checkAnswer(val);
+      });
+
+      answerInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          submitBtn.click();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
