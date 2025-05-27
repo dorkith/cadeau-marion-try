@@ -1,84 +1,120 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Le Jeu du Mot Mystère</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadeau Marion - Jeu de la Phrase Mystère</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 2rem; background: #f5f5f5; }
-    #game-container { max-width: 600px; margin: auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    #rules { margin-bottom: 1rem; }
-    .rule { margin-bottom: 0.5rem; font-weight: bold; }
-    input[type="text"] { width: 100%; padding: 0.5rem; font-size: 1.2rem; margin-top: 1rem; }
-    button { padding: 0.5rem 1rem; font-size: 1rem; margin-top: 1rem; }
-    #result { margin-top: 1rem; font-weight: bold; color: green; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2em;
+      background-color: #f9f9f9;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 1em;
+      font-size: 1.2em;
+    }
+    .rule {
+      margin: 1em 0;
+      padding: 1em;
+      border-left: 5px solid grey;
+      background-color: #fff;
+    }
+    .rule.valid {
+      border-color: green;
+    }
+    .rule.invalid {
+      border-color: red;
+    }
+    #emojiHint {
+      font-size: 2em;
+    }
   </style>
 </head>
 <body>
-  <div id="game-container">
-    <h1>🔐 Le Jeu du Mot Mystère</h1>
-    <div id="rules"></div>
-    <input type="text" id="phrase" placeholder="Tape ici ta phrase..." />
-    <button onclick="checkRules()">Vérifier</button>
-    <div id="result"></div>
-  </div>
+  <h1>🎁 Jeu : Trouve la Phrase Mystère !</h1>
+  <p>Entre une phrase qui respecte les contraintes ci-dessous. Chaque règle validée te rapproche de la réponse !</p>
+  <input type="text" id="phrase" placeholder="Tape ta phrase ici...">
+  <div id="rules"></div>
 
   <script>
-    const allRules = [
-      phrase => phrase.split(' ').length >= 4 || "La phrase doit contenir au moins 4 mots.",
-      phrase => phrase.length >= 20 || "La phrase doit faire au moins 20 caractères.",
-      phrase => phrase.includes(',') || "La phrase doit contenir une virgule.",
-      phrase => /[A-Z]/.test(phrase) || "La phrase doit contenir au moins une majuscule.",
-      phrase => phrase.endsWith('.') || "La phrase doit se terminer par un point.",
-      phrase => new Set(phrase.replace(/[^a-zA-Z]/g, '').toLowerCase()).size >= 10 || "La phrase doit utiliser au moins 10 lettres différentes.",
-      phrase => phrase.split(' ').every(word => word.length <= 12) || "Aucun mot ne doit dépasser 12 lettres.",
-      phrase => (phrase.match(/[aeiouyàâäéèêëîïôöùûüÿ]/gi)?.length || 0) >= 8 || "La phrase doit contenir au moins 8 voyelles.",
-      phrase => (phrase.match(/[!?]/g)?.length || 0) >= 1 || "La phrase doit contenir au moins un point d'exclamation ou un point d'interrogation.",
-      phrase => phrase.split(' ').filter((w, i, arr) => arr.indexOf(w) !== i).length === 0 || "Aucun mot ne doit être répété.",
-    ];
+    const finalPhrase = "Félicitation, je t'offre un abonnement Médiapart.".toLowerCase();
 
-    let currentRuleIndex = 0;
-
-    function checkRules() {
-      const phrase = document.getElementById("phrase").value.trim();
-      const resultDiv = document.getElementById("result");
-      resultDiv.textContent = "";
-      const rulesDiv = document.getElementById("rules");
-
-      for (let i = 0; i <= currentRuleIndex; i++) {
-        const rule = allRules[i];
-        const validation = rule(phrase);
-        if (typeof validation === "string") {
-          resultDiv.style.color = "red";
-          resultDiv.textContent = validation;
-          return;
+    const rules = [
+      {
+        text: "La phrase contient entre 6 et 10 mots.",
+        validate: phrase => phrase.trim().split(/\s+/).length >= 6 && phrase.trim().split(/\s+/).length <= 10
+      },
+      {
+        text: "Il y a au moins une virgule dans la phrase.",
+        validate: phrase => phrase.includes(',')
+      },
+      {
+        text: "Chaque mot contient entre 2 et 12 lettres.",
+        validate: phrase => phrase.split(/\s+/).every(word => word.replace(/[^a-zA-Zéèàêâ]/g, '').length <= 12 && word.length >= 2)
+      },
+      {
+        text: "Le troisième mot est en majuscules.",
+        validate: phrase => phrase.split(/\s+/)[2]?.toUpperCase() === phrase.split(/\s+/)[2]
+      },
+      {
+        text: "La phrase contient au moins deux types de ponctuation (ex: .,!?).",
+        validate: phrase => [',', '.', '!', '?'].filter(p => phrase.includes(p)).length >= 2
+      },
+      {
+        text: "Un des mots est un palindrome (ex: " + 'elle' + ").",
+        validate: phrase => phrase.split(/\s+/).some(w => {
+          const clean = w.toLowerCase().replace(/[^a-z]/g, '');
+          return clean === clean.split('').reverse().join('') && clean.length > 1;
+        })
+      },
+      {
+        text: "La phrase contient un mot avec le son 'ch' ou 'gn'.",
+        validate: phrase => phrase.toLowerCase().includes('ch') || phrase.toLowerCase().includes('gn')
+      },
+      {
+        text: "Un emoji est présent dans la phrase (ex: 😊).",
+        validate: phrase => /[�-�][�-�]/.test(phrase)
+      },
+      {
+        text: "La première lettre du premier mot est une majuscule.",
+        validate: phrase => /^[A-Z]/.test(phrase.trim())
+      },
+      {
+        text: "Le dernier mot contient entre 8 et 10 lettres.",
+        validate: phrase => {
+          const lastWord = phrase.trim().split(/\s+/).pop().replace(/[^a-zA-Z]/g, '');
+          return lastWord.length >= 8 && lastWord.length <= 10;
         }
       }
+    ];
 
-      if (currentRuleIndex < allRules.length - 1) {
-        currentRuleIndex++;
-        updateRules();
-        resultDiv.style.color = "green";
-        resultDiv.textContent = "✅ Règle validée ! Continue...";
-      } else {
-        resultDiv.style.color = "green";
-        resultDiv.textContent = "🎉 Félicitations ! Tu as trouvé la bonne phrase !";
-      }
-    }
+    const phraseInput = document.getElementById('phrase');
+    const rulesDiv = document.getElementById('rules');
 
     function updateRules() {
-      const rulesDiv = document.getElementById("rules");
-      rulesDiv.innerHTML = "";
-      for (let i = 0; i <= currentRuleIndex; i++) {
-        const ruleText = allRules[i]("TEST") === true ? `Règle ${i + 1}` : allRules[i]("TEST");
-        const div = document.createElement("div");
-        div.className = "rule";
-        div.textContent = `🧩 ${ruleText}`;
+      const value = phraseInput.value;
+      rulesDiv.innerHTML = '';
+      let allValid = true;
+
+      rules.forEach(rule => {
+        const isValid = rule.validate(value);
+        const div = document.createElement('div');
+        div.className = 'rule ' + (isValid ? 'valid' : 'invalid');
+        div.textContent = (isValid ? '✅ ' : '❌ ') + rule.text;
         rulesDiv.appendChild(div);
+        if (!isValid) allValid = false;
+      });
+
+      if (allValid && value.trim().toLowerCase() === finalPhrase) {
+        const success = document.createElement('div');
+        success.innerHTML = '<h2>🎉 Bravo ! Tu as trouvé la phrase mystère !</h2>';
+        rulesDiv.appendChild(success);
       }
     }
 
-    updateRules();
+    phraseInput.addEventListener('input', updateRules);
   </script>
 </body>
 </html>
