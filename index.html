@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<title>Jeu mot de passe progressif (25 règles)</title>
+<title>Jeu mot de passe progressif (25 règles subtiles)</title>
 <style>
   body { font-family: Arial, sans-serif; max-width: 600px; margin: 2em auto; }
   input { width: 100%; padding: 0.5em; font-size: 1.2em; }
@@ -14,8 +14,8 @@
 </head>
 <body>
 
-<h2>Jeu du mot de passe progressif (25 règles)</h2>
-<p>Construis la phrase finale en respectant chaque contrainte, une par une.</p>
+<h2>Jeu du mot de passe progressif (25 règles subtiles)</h2>
+<p>Construis la phrase finale en respectant chaque contrainte, une par une. Les contraintes s'empilent !</p>
 
 <div id="rule" class="rule"></div>
 
@@ -28,31 +28,31 @@
   const finalPhrase = "Félicitations, je t'offre un abonnement Médiapart.";
 
   const rules = [
-    "La réponse commence par une majuscule.",
-    "La réponse contient une virgule.",
-    "La réponse contient le mot entier « je ».",
-    "La réponse contient la contraction « t'offre » avec apostrophe.",
-    "La réponse contient le mot « un ».",
-    "La réponse contient le mot « abonnement ».",
-    "La réponse contient le mot « Médiapart » avec majuscule et accent.",
-    "La phrase finit par un point.",
-    "La phrase comporte exactement 7 mots.",
-    "La phrase comporte exactement 38 caractères (espaces compris).",
-    "La réponse commence par « Félicitations ».",
-    "La virgule est juste après « Félicitations ».",
-    "Il y a exactement 6 espaces dans la phrase.",
-    "Le mot « je » est avant le mot « t'offre ».",
-    "Le mot « abonnement » est avant le mot « Médiapart ».",
-    "Le mot « t'offre » est précédé par le mot « je ».",
-    "Le mot « Médiapart » est le dernier mot avant le point.",
-    "La phrase contient un apostrophe (').",
-    "Le mot « je » est écrit en minuscules.",
-    "La première lettre de chaque mot est soit une majuscule (pour « Félicitations » et « Médiapart ») ou une minuscule.",
-    "La phrase ne contient aucun autre signe de ponctuation que la virgule et le point final.",
-    "La phrase ne contient pas de double espace.",
-    "La phrase ne contient pas le mot « offre » tout seul (doit être « t'offre »).",
-    "La phrase est sensible à la casse (respect exact des majuscules/minuscules).",
-    "La réponse est strictement égale à :<br><strong>Félicitations, je t'offre un abonnement Médiapart.</strong>"
+    "La première lettre de la réponse est une majuscule.",
+    "La réponse contient au moins une voyelle accentuée (é, è, ê, etc.).",
+    "La réponse contient une apostrophe (').",
+    "La réponse contient au moins une virgule.",
+    "La réponse comporte entre 30 et 40 caractères.",
+    "La réponse contient exactement 6 espaces.",
+    "Le premier mot fait au moins 6 lettres.",
+    "Le dernier caractère est un point.",
+    "La réponse contient au moins un mot de 2 lettres.",
+    "Il y a un mot avec un double 't'.",
+    "Le texte ne contient pas la lettre 'z'.",
+    "Il y a un mot qui commence par un 'j' minuscule.",
+    "Le texte contient la lettre 'o' au moins 3 fois.",
+    "Le mot contenant l’apostrophe commence par 't'.",
+    "La virgule est placée entre le premier et le deuxième mot.",
+    "Le nombre total de lettres (sans espaces) est 32.",
+    "Le texte ne contient pas de majuscule autre qu’au premier mot et au dernier mot.",
+    "Le dernier mot commence par 'M'.",
+    "Le mot avec un double 't' est avant le dernier mot.",
+    "Le mot 'je' apparaît dans le texte.",
+    "Le mot contenant l’apostrophe est directement après 'je'.",
+    "Le dernier mot est exactement 'Médiapart'.",
+    "Le texte contient le mot 'abonnement'.",
+    "La phrase est sensible à la casse (majuscule et minuscules).",
+    "La phrase finale exacte est :<br><strong>Félicitations, je t'offre un abonnement Médiapart.</strong>"
   ];
 
   let step = 0;
@@ -62,112 +62,129 @@
   const submitBtn = document.getElementById('submitBtn');
   const messageDiv = document.getElementById('message');
 
-  function showRule() {
-    ruleDiv.innerHTML = `Règle #${step + 1} : ${rules[step]}`;
-    messageDiv.textContent = "";
-    answerInput.value = "";
-    answerInput.focus();
-  }
-
   function countWords(str) {
     return str.trim().split(/\s+/).length;
   }
 
-  function checkCapitalization(word, isFirstOrLast=false) {
-    if (isFirstOrLast) {
-      // Doit commencer par majuscule
+  function countLetters(str) {
+    return str.replace(/\s/g, '').length;
+  }
+
+  function hasDoubleLetter(str, letter) {
+    const re = new RegExp(letter+letter, 'i');
+    return re.test(str);
+  }
+
+  function checkCapitalization(word, shouldBeCapital) {
+    if (shouldBeCapital) {
       return /^[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ]/.test(word);
     } else {
-      // Doit commencer par minuscule
       return /^[a-zàâéèêëîïôùûüç]/.test(word);
     }
   }
 
   function checkAnswer(answer) {
-    switch(step) {
+    // On vérifie toutes les règles précédentes aussi
+    for(let i=0; i<=step; i++){
+      if(!checkSingleRule(answer, i)) return false;
+    }
+    return true;
+  }
+
+  function checkSingleRule(answer, ruleIndex) {
+    switch(ruleIndex) {
       case 0:
-        // Commence par une majuscule
+        // Première lettre majuscule
         return /^[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ]/.test(answer);
       case 1:
-        // Contient une virgule
-        return answer.includes(',');
+        // Au moins une voyelle accentuée
+        return /[éèêëàâîïôûù]/i.test(answer);
       case 2:
-        // Contient le mot 'je' (mot entier)
-        return /\bje\b/.test(answer);
+        // Contient apostrophe
+        return answer.includes("'");
       case 3:
-        // Contient "t'offre"
-        return answer.includes("t'offre");
+        // Contient virgule
+        return answer.includes(",");
       case 4:
-        // Contient le mot 'un'
-        return /\bun\b/.test(answer);
+        // 30 à 40 caractères
+        return answer.length >=30 && answer.length <=40;
       case 5:
-        // Contient 'abonnement'
-        return answer.includes('abonnement');
+        // 6 espaces
+        return (answer.match(/ /g) || []).length === 6;
       case 6:
-        // Contient 'Médiapart' (majuscule et accent)
-        return answer.includes('Médiapart');
+        // Premier mot >= 6 lettres
+        const firstWord = answer.trim().split(' ')[0];
+        return firstWord.length >=6;
       case 7:
-        // Finit par un point
+        // Finit par point
         return answer.endsWith('.');
       case 8:
-        // 7 mots exactement
-        return countWords(answer) === 7;
+        // Au moins un mot de 2 lettres
+        return answer.trim().split(' ').some(w => w.length === 2);
       case 9:
-        // 38 caractères (espaces compris)
-        return answer.length === 38;
+        // Un mot avec double 't'
+        return /tt/.test(answer);
       case 10:
-        // Commence par 'Félicitations'
-        return answer.startsWith('Félicitations');
+        // Pas de lettre z
+        return !/z/i.test(answer);
       case 11:
-        // Virgule juste après 'Félicitations'
-        return answer.indexOf(',') === 'Félicitations'.length;
+        // Mot qui commence par 'j' minuscule
+        return answer.trim().split(' ').some(w => /^j/.test(w));
       case 12:
-        // 6 espaces dans la phrase
-        return (answer.match(/ /g) || []).length === 6;
+        // Lettre o au moins 3 fois
+        return (answer.match(/o/gi) || []).length >= 3;
       case 13:
-        // 'je' avant 't'offre'
-        return answer.indexOf('je') < answer.indexOf("t'offre");
+        // Mot avec apostrophe commence par 't'
+        const wordsWithApostrophe = answer.match(/\b\w+'\w+\b/g) || [];
+        return wordsWithApostrophe.some(w => /^t/.test(w));
       case 14:
-        // 'abonnement' avant 'Médiapart'
-        return answer.indexOf('abonnement') < answer.indexOf('Médiapart');
+        // Virgule entre 1er et 2e mot
+        const commaIndex = answer.indexOf(',');
+        const firstSpace = answer.indexOf(' ');
+        return commaIndex > firstSpace && commaIndex < answer.indexOf(' ', firstSpace + 1);
       case 15:
-        // 't'offre' précédé par 'je' (mots consécutifs)
-        // On cherche "je t'offre"
-        return /\bje t'offre\b/.test(answer);
+        // 32 lettres (sans espaces)
+        return countLetters(answer) === 32;
       case 16:
-        // 'Médiapart' est dernier mot avant le point
-        // On vérifie que "Médiapart." est la fin ou que le mot avant le point est Médiapart
-        return answer.endsWith('Médiapart.');
-      case 17:
-        // Contient un apostrophe
-        return answer.includes("'");
-      case 18:
-        // 'je' est en minuscules (on cherche exactement 'je', pas 'Je')
-        return /\bje\b/.test(answer) && !/\bJe\b/.test(answer);
-      case 19:
-        // Première lettre de chaque mot : majuscule seulement pour "Félicitations" et "Médiapart", minuscule sinon
-        const words = answer.split(' ');
-        if (words.length !==7) return false;
-        if (!checkCapitalization(words[0], true)) return false; // Félicitations avec majuscule
-        for(let i=1; i < words.length - 1; i++){
-          if (!checkCapitalization(words[i], false)) return false; // minuscule pour les autres mots intermédiaires
+        // Majuscule seulement au premier et dernier mot
+        const words = answer.trim().split(' ');
+        for(let i=1; i<words.length-1; i++){
+          if(/[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ]/.test(words[i][0])){
+            return false;
+          }
         }
-        if (!checkCapitalization(words[words.length -1], true)) return false; // Médiapart majuscule
         return true;
+      case 17:
+        // Dernier mot commence par M
+        const lastWord = answer.trim().split(' ').slice(-1)[0].replace(/\.$/, '');
+        return /^M/.test(lastWord);
+      case 18:
+        // Mot avec double t avant dernier mot
+        const allWords = answer.trim().split(' ');
+        const doubleTWordIndex = allWords.findIndex(w => /tt/.test(w));
+        return doubleTWordIndex !== -1 && doubleTWordIndex < allWords.length -1;
+      case 19:
+        // Mot 'je' dans le texte
+        return /\bje\b/.test(answer);
       case 20:
-        // Pas d'autre ponctuation que virgule et point final
-        return !/[;:!?]/.test(answer);
+        // Mot avec apostrophe juste après 'je'
+        // on cherche "je t'offre"
+        return /\bje t'offre\b/.test(answer);
       case 21:
-        // Pas de double espace
-        return !answer.includes("  ");
+        // Dernier mot = Médiapart
+        const lw = answer.trim().split(' ').slice(-1)[0].replace(/\.$/, '');
+        return lw === 'Médiapart';
       case 22:
-        // Pas le mot 'offre' tout seul (doit être "t'offre")
-        return !/\boffre\b/.test(answer);
+        // Contient mot 'abonnement'
+        return /\babonnement\b/.test(answer);
       case 23:
-        // Sensible à la casse (on compare exactement)
-        return answer === answer;
+        // Sensible à la casse (on vérifie que la réponse est exactement celle qu'on attend pour les maj/min)
+        // Ici on compare avec la phrase finale mais en ne validant que si les lettres en maj/min sont respectées
+        // Simplifions en validant que la phrase est égale au final en casse
+        // La vraie vérification finale est en règle 24
+        return true; 
       case 24:
-        // Réponse exacte finale
+        // Phrase finale exacte
         return answer === finalPhrase;
       default:
         return false;
@@ -193,7 +210,13 @@
     }
   });
 
-  // Démarrage
+  function showRule() {
+    ruleDiv.innerHTML = `Règle #${step + 1} : ${rules[step]}`;
+    messageDiv.textContent = "";
+    answerInput.value = "";
+    answerInput.focus();
+  }
+
   showRule();
 </script>
 
