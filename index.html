@@ -71,10 +71,10 @@
     transition: color 0.3s;
   }
   ul#rulesList li.valid {
-    color: #4caf50; /* vert */
+    color: #4caf50;
   }
   ul#rulesList li.invalid {
-    color: #f44336; /* rouge */
+    color: #f44336;
   }
 </style>
 </head>
@@ -102,7 +102,7 @@
     { text: "5) Tape un mot qui finit par la lettre 't'.", test: ans => ans.trim().endsWith("t") },
     { text: "6) Tape un mot qui contient exactement deux lettres 'a'.", test: ans => (ans.match(/a/g) || []).length === 2 },
     { text: "7) Tape un mot qui contient la lettre 'p'.", test: ans => ans.includes("p") },
-    { text: "8) Tape un mot où la 3e lettre est 'i' (minuscule).", test: ans => ans.length >= 3 && ans[2].toLowerCase() === "i" },
+    { text: "8) Tape un mot où la 4e lettre est 'i' (minuscule).", test: ans => ans.length >= 4 && ans[3].toLowerCase() === "i" },
     { text: "9) Tape un mot où la 5e lettre est 'a'.", test: ans => ans.length >= 5 && ans[4].toLowerCase() === "a" },
     { text: "10) Tape un mot qui contient la lettre 'r'.", test: ans => ans.includes("r") },
     { text: "11) Tape un mot qui commence par 'Mé' (avec accent).", test: ans => ans.startsWith("Mé") },
@@ -110,7 +110,7 @@
     { text: "13) Tape un mot qui contient la lettre 'i'.", test: ans => ans.toLowerCase().includes("i") },
     { text: "14) Tape un mot qui ne contient pas de majuscule sauf la première lettre.", test: ans => /^[A-Z][a-zàâäéèêëïîôöùûüç]*$/.test(ans) },
     { text: "15) Tape un mot avec au moins une lettre accentuée.", test: ans => /[àâäéèêëïîôöùûüç]/i.test(ans) },
-    { text: "16) Tape un mot avec exactement 3 voyelles.", test: ans => (ans.match(/[aeiouyàâäéèêëïîôöùûü]/gi) || []).length === 3 },
+    { text: "16) Tape un mot avec exactement 4 voyelles.", test: ans => (ans.match(/[aeiouyàâäéèêëïîôöùûü]/gi) || []).length === 4 },
     { text: "17) Tape un mot qui ne contient pas la lettre 'o'.", test: ans => !ans.includes("o") },
     { text: "18) Tape un mot dont la dernière lettre est 't'.", test: ans => ans.endsWith("t") },
     { text: "19) Tape un mot où la lettre 'p' est avant la lettre 'r'.", test: ans => ans.indexOf("p") !== -1 && ans.indexOf("r") !== -1 && ans.indexOf("p") < ans.indexOf("r") },
@@ -129,7 +129,6 @@
   const rulesList = document.getElementById("rulesList");
 
   let currentQuestion = 0;
-  // Tableau pour stocker l'état des règles cumulées (true = validée, false = non validée)
   let rulesStatus = new Array(questions.length).fill(false);
 
   function clearUI() {
@@ -139,8 +138,6 @@
   }
 
   function validateAnswer(ans) {
-    // Pour chaque règle jusqu'à currentQuestion on teste si la règle est respectée
-    // On met à jour le tableau rulesStatus
     let allValid = true;
     for (let i = 0; i <= currentQuestion; i++) {
       const valid = questions[i].test(ans);
@@ -178,7 +175,6 @@
     questionCounter.textContent = `Question ${currentQuestion + 1} sur ${questions.length}`;
     questionText.textContent = q.text;
 
-    // Création de l'input et bouton
     const input = document.createElement("input");
     input.type = "text";
     input.autocomplete = "off";
@@ -213,12 +209,10 @@
       }
     });
 
-    // Valider aussi en appuyant sur Enter
     input.addEventListener("keypress", e => {
       if (e.key === "Enter") button.click();
     });
 
-    // Afficher les règles déjà validées en vert si on a déjà progressé
     updateRulesDisplay();
   }
 
