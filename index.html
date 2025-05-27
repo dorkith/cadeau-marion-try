@@ -1,183 +1,182 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <title>Jeu du mot de passe impossible</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #0f0f23;
-      color: #f2f2f2;
-      padding: 20px;
-    }
-    .container {
-      max-width: 700px;
-      margin: auto;
-    }
-    input, button {
-      width: 100%;
-      padding: 12px;
-      font-size: 1rem;
-      margin-top: 10px;
-      border-radius: 5px;
-      border: none;
-      box-sizing: border-box;
-    }
-    input {
-      background: #1c1c3c;
-      color: #eee;
-    }
-    button {
-      background: #1f8a70;
-      color: white;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-    button:disabled {
-      background: #555;
-      cursor: not-allowed;
-    }
-    button:hover:not(:disabled) {
-      background: #16664e;
-    }
-    .success { color: #4caf50; margin-top: 10px; }
-    .error { color: #f44336; margin-top: 10px; }
-    ul { padding-left: 20px; }
-    li { margin-bottom: 8px; }
-    #rulesList {
-      margin-bottom: 15px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Mot de passe impossible corrigé</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #0f0f23;
+    color: #f2f2f2;
+    max-width: 700px;
+    margin: 40px auto;
+    padding: 20px;
+  }
+  input, button {
+    font-size: 1.2rem;
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 10px;
+    border-radius: 6px;
+    border: none;
+  }
+  input {
+    background: #1c1c3c;
+    color: white;
+  }
+  button {
+    background: #1f8a70;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  button:disabled {
+    background: #444;
+    cursor: not-allowed;
+  }
+  button:hover:not(:disabled) {
+    background: #16664e;
+  }
+  ul {
+    padding-left: 20px;
+  }
+  li {
+    margin-bottom: 10px;
+  }
+  .success {
+    color: #4caf50;
+    margin-top: 15px;
+  }
+  .error {
+    color: #f44336;
+    margin-top: 15px;
+  }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>🧠 Le Mot de Passe Impossible</h1>
-    <h2>Respecte toutes les règles pour trouver LA bonne phrase !</h2>
+  <h1>🧠 Le Mot de Passe Impossible</h1>
+  <h2>Respecte la règle actuelle pour avancer</h2>
 
-    <h3>Règle à respecter :</h3>
-    <ul id="rulesList"></ul>
+  <h3>Règle à respecter :</h3>
+  <ul id="ruleList"><li></li></ul>
 
-    <input id="answerInput" type="text" placeholder="Tape ta proposition ici..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" />
-    <button id="submitBtn" disabled>Valider</button>
+  <input type="text" id="inputAnswer" placeholder="Tape ta phrase ici..." autocomplete="off" />
+  <button id="btnSubmit" disabled>Valider</button>
 
-    <p id="message"></p>
-    <p id="stats"></p>
-  </div>
+  <p id="message"></p>
+  <p id="stats"></p>
 
-  <script>
-    const rules = [
-      {
-        text: "La phrase commence par une majuscule.",
-        test: str => /^[A-ZÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/.test(str),
-      },
-      {
-        text: "La phrase contient exactement 6 mots.",
-        test: str => str.trim().split(/\s+/).length === 6,
-      },
-      {
-        text: "La phrase contient une virgule.",
-        test: str => /,/.test(str),
-      },
-      {
-        text: "La phrase contient un pronom personnel (je, tu, il...).",
-        test: str => /\b(je|tu|il|elle|on|nous|vous|ils|elles)\b/i.test(str),
-      },
-      {
-        text: "La phrase contient une contraction (ex: t'offre, j'aime...).",
-        test: str => /\b(j'|t'|l'|n'|s')\w+/i.test(str),
-      },
-      {
-        text: "La phrase contient au moins 3 lettres accentuées.",
-        test: str => [...str].filter(c => "àâäéèêëïîôöùûüç".includes(c.toLowerCase())).length >= 3,
-      },
-      {
-        text: "Le mot juste après la virgule commence par un 'j' minuscule.",
-        test: str => {
-          const parts = str.split(',');
-          if (parts.length < 2) return false;
-          return parts[1].trim().startsWith('j');
-        }
-      },
-      {
-        text: "Le mot 'abonnement' est présent mais n'est pas le dernier mot.",
-        test: str => {
-          const words = str.trim().toLowerCase().replace(/[.,!?]/g, '').split(/\s+/);
-          return words.includes("abonnement") && words[words.length - 1] !== "abonnement";
-        }
-      },
-      {
-        text: "Le dernier mot commence par un 'M' majuscule.",
-        test: str => {
-          const words = str.trim().split(/\s+/);
-          return words[words.length -1].startsWith("M");
-        }
-      },
-      {
-        text: "La phrase exacte est respectée (sans indice direct) : elle doit correspondre à la phrase finale.",
-        test: str => str === "Félicitation, je t'offre un abonnement Médiapart."
+<script>
+  const rules = [
+    {
+      text: "La phrase commence par une majuscule.",
+      test: s => /^[A-ZÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/.test(s),
+    },
+    {
+      text: "La phrase contient exactement 6 mots.",
+      test: s => s.trim().split(/\s+/).length === 6,
+    },
+    {
+      text: "La phrase contient une virgule.",
+      test: s => /,/.test(s),
+    },
+    {
+      text: "La phrase contient un pronom personnel (je, tu, il...).",
+      test: s => /\b(je|tu|il|elle|on|nous|vous|ils|elles)\b/i.test(s),
+    },
+    {
+      text: "La phrase contient une contraction (ex: t'offre, j'aime...).",
+      test: s => /\b(j'|t'|l'|n'|s')\w+/i.test(s),
+    },
+    {
+      text: "La phrase contient au moins 3 lettres accentuées.",
+      test: s => [...s].filter(c => "àâäéèêëïîôöùûüç".includes(c.toLowerCase())).length >= 3,
+    },
+    {
+      text: "Le mot juste après la virgule commence par un 'j' minuscule.",
+      test: s => {
+        const parts = s.split(',');
+        if(parts.length < 2) return false;
+        return parts[1].trim().startsWith('j');
       }
-    ];
-
-    let step = 0;
-    let attempts = 0;
-    const startTime = Date.now();
-
-    const answerInput = document.getElementById("answerInput");
-    const submitBtn = document.getElementById("submitBtn");
-    const messageDiv = document.getElementById("message");
-    const rulesList = document.getElementById("rulesList");
-    const statsDiv = document.getElementById("stats");
-
-    function showRule() {
-      rulesList.innerHTML = "";
-      const li = document.createElement("li");
-      li.textContent = rules[step].text;
-      rulesList.appendChild(li);
+    },
+    {
+      text: "Le mot 'abonnement' est présent mais n'est pas le dernier mot.",
+      test: s => {
+        const words = s.toLowerCase().replace(/[.,!?]/g, '').split(/\s+/);
+        return words.includes("abonnement") && words[words.length-1] !== "abonnement";
+      }
+    },
+    {
+      text: "Le dernier mot commence par un 'M' majuscule.",
+      test: s => {
+        const words = s.trim().split(/\s+/);
+        return words[words.length-1].startsWith("M");
+      }
+    },
+    {
+      text: "La phrase exacte est : Félicitation, je t'offre un abonnement Médiapart.",
+      test: s => s === "Félicitation, je t'offre un abonnement Médiapart."
     }
+  ];
 
-    function updateStats() {
-      const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      statsDiv.textContent = `Tentatives : ${attempts} | Temps écoulé : ${elapsed} sec`;
-    }
+  let step = 0;
+  let attempts = 0;
+  const startTime = Date.now();
 
-    // Active ou désactive le bouton selon le contenu
-    answerInput.addEventListener("input", () => {
-      submitBtn.disabled = answerInput.value.trim().length === 0;
-      messageDiv.textContent = "";
-    });
+  const input = document.getElementById('inputAnswer');
+  const btn = document.getElementById('btnSubmit');
+  const message = document.getElementById('message');
+  const ruleList = document.getElementById('ruleList').getElementsByTagName('li')[0];
+  const stats = document.getElementById('stats');
 
-    submitBtn.addEventListener("click", () => {
-      const input = answerInput.value.trim();
-      if (!input) return;
+  function updateRule() {
+    ruleList.textContent = rules[step].text;
+  }
 
-      attempts++;
+  function updateStats() {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    stats.textContent = `Tentatives : ${attempts} | Temps écoulé : ${elapsed} sec`;
+  }
 
-      if (rules[step].test(input)) {
-        step++;
-        messageDiv.textContent = "✅ Bien joué, règle validée !";
-        messageDiv.className = "success";
-        if (step === rules.length) {
-          messageDiv.textContent = "🎉 Félicitations ! Tu as trouvé la phrase parfaite.";
-          submitBtn.disabled = true;
-          answerInput.disabled = true;
-          rulesList.innerHTML = "";
-        } else {
-          showRule();
-        }
+  input.addEventListener('input', () => {
+    btn.disabled = input.value.trim().length === 0;
+    message.textContent = '';
+    message.className = '';
+  });
+
+  btn.addEventListener('click', () => {
+    const val = input.value.trim();
+    if(!val) return;
+    attempts++;
+
+    if(rules[step].test(val)) {
+      step++;
+      if(step === rules.length) {
+        message.textContent = "🎉 Félicitations ! Tu as trouvé la phrase parfaite.";
+        message.className = "success";
+        btn.disabled = true;
+        input.disabled = true;
+        ruleList.textContent = "";
       } else {
-        messageDiv.textContent = "❌ Oups, ta phrase ne respecte pas la règle actuelle.";
-        messageDiv.className = "error";
+        message.textContent = "✅ Règle validée, passe à la suivante !";
+        message.className = "success";
+        updateRule();
       }
-      updateStats();
-    });
-
-    answerInput.addEventListener("keypress", e => {
-      if (e.key === "Enter" && !submitBtn.disabled) submitBtn.click();
-    });
-
-    // Initialisation
-    showRule();
+    } else {
+      message.textContent = "❌ Cette phrase ne respecte pas la règle actuelle, essaie encore.";
+      message.className = "error";
+    }
     updateStats();
-  </script>
+  });
+
+  input.addEventListener('keypress', e => {
+    if(e.key === 'Enter' && !btn.disabled) btn.click();
+  });
+
+  updateRule();
+  updateStats();
+</script>
 </body>
 </html>
