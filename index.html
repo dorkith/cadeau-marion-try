@@ -1,200 +1,215 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <title>Jeu du mot de passe impossible corrigé</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Game - Médiapart</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #121212;
-      color: #eee;
-      padding: 20px;
-      max-width: 700px;
-      margin: auto;
-    }
-    h1, h2 {
-      text-align: center;
-    }
-    input, button {
-      width: 100%;
-      padding: 12px;
-      font-size: 1.1rem;
-      margin: 10px 0;
-      border-radius: 6px;
-      border: none;
-    }
-    button {
-      background-color: #28a745;
-      color: white;
-      cursor: pointer;
-    }
-    button:disabled {
-      background-color: #777;
-      cursor: not-allowed;
-    }
-    ul {
-      margin-bottom: 20px;
-      padding-left: 20px;
-    }
-    li {
-      margin-bottom: 6px;
-    }
-    .success {
-      color: #4caf50;
-      font-weight: bold;
-    }
-    .error {
-      color: #f44336;
-      font-weight: bold;
-    }
+    body { font-family: sans-serif; padding: 2rem; background: #f5f5f5; }
+    h1 { font-size: 2rem; }
+    #rule { font-weight: bold; margin-bottom: 1rem; }
+    #inputZone { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+    #message { min-height: 1rem; margin-top: 0.5rem; }
+    #progress { margin: 1rem 0; font-weight: bold; }
+    #miniGameContainer img.img-blur { filter: blur(5px); height: 100px; }
+    #dragList { list-style: none; padding: 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    #dragList li { background: white; padding: 0.5rem; border: 1px solid #ccc; cursor: grab; }
+    li.dragging { opacity: 0.5; }
+    li.over { border-color: blue; }
   </style>
 </head>
 <body>
-  <h1>🧩 Le Mot de Passe Impossible</h1>
-  <h2>Trouve la phrase qui respecte toutes les règles ci-dessous</h2>
-
-  <ul id="rulesList"></ul>
-
-  <input id="answerInput" type="text" placeholder="Tape ta phrase ici..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" />
-  <button id="submitBtn">Valider la phrase</button>
-
-  <p id="message"></p>
-  <p id="stats"></p>
+  <h1>Password Game - Médiapart Edition</h1>
+  <div id="rule"></div>
+  <div id="inputZone">
+    <input type="text" id="answer" placeholder="Tape ta phrase ici...">
+    <button id="submit">Valider</button>
+  </div>
+  <div id="progress"></div>
+  <div id="message"></div>
+  <div id="miniGameContainer"></div>
+  <button id="start">Commencer</button>
 
   <script>
-    // Règles corrigées, sans spoilers ni mots directs
     const rules = [
-      {
-        text: "La phrase commence par une majuscule.",
-        test: str => /^[A-ZÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/.test(str),
-      },
-      {
-        text: "La phrase contient exactement 6 mots.",
-        test: str => str.trim().split(/\s+/).length === 6,
-      },
-      {
-        text: "La phrase contient au moins une virgule.",
-        test: str => /,/.test(str),
-      },
-      {
-        text: "La phrase contient un pronom personnel (je, tu, il, nous, vous...).",
-        test: str => /\b(je|tu|il|elle|on|nous|vous|ils|elles)\b/i.test(str),
-      },
-      {
-        text: "La phrase contient une contraction (ex: t'offre, j'aime...).",
-        test: str => /\b(j'|t'|l'|n'|s')\w+/i.test(str),
-      },
-      {
-        text: "La phrase contient au moins 5 voyelles différentes (a, e, i, o, u, y).",
-        test: str => {
-          const vowels = new Set();
-          for (const c of str.toLowerCase()) {
-            if ("aeiouy".includes(c)) vowels.add(c);
-          }
-          return vowels.size >= 5;
-        },
-      },
-      {
-        text: "Le mot après la virgule commence par la lettre J (majuscule ou minuscule).",
-        test: str => {
-          const afterComma = str.split(',')[1];
-          if (!afterComma) return false;
-          const firstWord = afterComma.trim().split(/\s+/)[0];
-          return firstWord[0] && firstWord[0].toLowerCase() === 'j';
-        },
-      },
-      {
-        text: "Un mot important est présent, mais pas en dernière position.",
-        test: str => {
-          const keyWord = "abonnement";
-          if (!str.toLowerCase().includes(keyWord)) return false;
-          const words = str.trim().split(/\s+/);
-          const lastWord = words[words.length - 1].replace(/[.,;:!?]/g, '').toLowerCase();
-          return lastWord !== keyWord;
-        },
-      },
-      {
-        text: "Tous les mots contiennent au maximum 12 lettres.",
-        test: str => {
-          const words = str.trim().split(/\s+/).map(w => w.replace(/[.,;:!?]/g, ''));
-          return words.every(w => w.length <= 12);
-        },
-      },
-      {
-        text: "Le dernier mot contient un nombre impair de lettres entre 7 et 11.",
-        test: str => {
-          const words = str.trim().split(/\s+/);
-          const lastWord = words[words.length - 1].replace(/[.,;:!?]/g, '');
-          const len = lastWord.length;
-          return len >= 7 && len <= 11 && len % 2 === 1;
-        },
-      },
-      {
-        text: "La phrase contient le mot 'offre'.",
-        test: str => str.toLowerCase().includes("offre"),
-      },
-      {
-        text: "Bravo, tu as respecté toutes les règles.",
-        test: str => false, // Fin du jeu, pas de test automatique
-      }
+      { text: "Ta phrase doit contenir le mot 'abonnement'.", test: input => input.toLowerCase().includes("abonnement"), emoji: "📩" },
+      { text: "Elle doit comporter au moins 3 mots.", test: input => input.trim().split(/\s+/).length >= 3, emoji: "🔤" },
+      { text: "Elle doit commencer par 'Félicitation'.", test: input => input.trim().startsWith("Félicitation"), emoji: "🎉" },
+      { text: "Elle doit contenir un mot en majuscules.", test: input => /\b[A-Z]{2,}\b/.test(input), emoji: "🔠" },
+      { text: "Elle doit contenir un emoji.", test: input => /\p{Emoji}/u.test(input), emoji: "😊" },
+      { text: "Un mot doit rimer avec 'art'.", test: input => input.split(/\s+/).some(m => /art$/.test(m.toLowerCase())), emoji: "🎵" },
+      { text: "Elle doit inclure la date du jour.", test: input => input.includes(new Date().toLocaleDateString('fr-FR')), emoji: "📅" },
+      { text: "Elle doit inclure un chiffre impair.", test: input => /\b[13579]\b/.test(input), emoji: "🔢" },
+      { text: "Mot acrostiche de 'abonnement'.", miniGame: "acrostiche", emoji: "🔡" },
+      { text: "Le mot 'offre' doit être chiffré en César +1.", miniGame: "cesar", emoji: "🔐" },
+      { text: "Reconnaissance d'image : quelle lettre est floutée ?", miniGame: "image", emoji: "🖼️" },
+      { text: "Incline ton téléphone vers la droite.", miniGame: "inclinaison", emoji: "📱" },
+      { text: "Réordonne les mots de la phrase correctement.", miniGame: "dragdrop", emoji: "🧩" },
+      { text: "Devine le mot prononcé.", miniGame: "audio", emoji: "🔊" },
+      { text: "Challenge chronométré : réponds en moins de 3 minutes !", test: () => true, emoji: "⏱️" }
     ];
 
     let step = 0;
     let attempts = 0;
+    let totalRules = rules.length;
+    let bonusChallengeActive = false;
+    let bonusSuccess = false;
+    let chronoTimeout;
 
-    const rulesList = document.getElementById("rulesList");
-    const answerInput = document.getElementById("answerInput");
-    const submitBtn = document.getElementById("submitBtn");
-    const messageDiv = document.getElementById("message");
-    const statsDiv = document.getElementById("stats");
+    const ruleDiv = document.getElementById('rule');
+    const answerInput = document.getElementById('answer');
+    const submitBtn = document.getElementById('submit');
+    const progressDiv = document.getElementById('progress');
+    const messageDiv = document.getElementById('message');
+    const miniGameContainer = document.getElementById('miniGameContainer');
+    const startBtn = document.getElementById('start');
 
-    function showRules() {
-      rulesList.innerHTML = "";
-      for (let i = 0; i <= step && i < rules.length; i++) {
-        const li = document.createElement("li");
-        li.textContent = rules[i].text;
-        rulesList.appendChild(li);
-      }
+    function updateProgress() {
+      progressDiv.textContent = `Règle ${step + 1} / ${totalRules}`;
     }
 
-    function validateInput(input) {
-      for (let i = 0; i <= step; i++) {
-        if (!rules[i].test(input)) {
-          return false;
-        }
+    function startChrono(seconds, callback) {
+      chronoTimeout = setTimeout(callback, seconds * 1000);
+    }
+    function stopChrono() {
+      clearTimeout(chronoTimeout);
+    }
+
+    function miniGameAcrostiche(input) {
+      const acro = input.trim().split(/\s+/).map(w => w[0]).join('').toLowerCase();
+      return acro.includes('abonnement');
+    }
+    function miniGameCesar(input) {
+      function cesar(m) {
+        return m.split('').map(c => c === 'z' ? 'a' : String.fromCharCode(c.charCodeAt(0) + 1)).join('');
       }
+      return input.toLowerCase().split(/\s+/).includes(cesar("offre"));
+    }
+    async function miniGameImage() {
+      miniGameContainer.innerHTML = `<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Fleur_de_lys_noir_et_blanc.svg/120px-Fleur_de_lys_noir_et_blanc.svg.png" class="img-blur"><input id="imgGuess"><button id="imgGuessBtn">Valider</button><div id="imgMsg"></div>`;
+      return new Promise(resolve => {
+        document.getElementById('imgGuessBtn').onclick = () => {
+          const val = document.getElementById('imgGuess').value.toUpperCase();
+          if(val === 'F') {
+            miniGameContainer.innerHTML = "";
+            resolve(true);
+          } else {
+            document.getElementById('imgMsg').textContent = "❌";
+            resolve(false);
+          }
+        };
+      });
+    }
+    async function miniGameInclinaison() {
+      miniGameContainer.innerHTML = `<button id="tiltRightBtn">Incliner à droite</button><div id="tiltMsg"></div>`;
+      return new Promise(resolve => {
+        document.getElementById('tiltRightBtn').onclick = () => {
+          miniGameContainer.innerHTML = "";
+          resolve(true);
+        };
+      });
+    }
+    async function miniGameDragDrop() {
+      const phrase = "Félicitation je t'offre un abonnement Médiapart";
+      const mots = phrase.split(' ').sort(() => Math.random() - 0.5);
+      miniGameContainer.innerHTML = `<ul id="dragList">${mots.map(w => `<li draggable="true">${w}</li>`).join('')}</ul><button id="validerDrag">Valider</button><div id="dragMsg"></div>`;
+      const dragList = document.getElementById('dragList');
+      let dragSrc;
+      dragList.querySelectorAll('li').forEach(li => {
+        li.ondragstart = e => { dragSrc = li; e.dataTransfer.setData('text', li.innerHTML); };
+        li.ondrop = e => { e.preventDefault(); [dragSrc.innerHTML, li.innerHTML] = [li.innerHTML, dragSrc.innerHTML]; };
+        li.ondragover = e => e.preventDefault();
+      });
+      return new Promise(resolve => {
+        document.getElementById('validerDrag').onclick = () => {
+          const ordre = [...dragList.children].map(li => li.textContent).join(' ');
+          if(ordre === phrase) {
+            miniGameContainer.innerHTML = "";
+            resolve(true);
+          } else {
+            document.getElementById('dragMsg').textContent = "❌ Mauvais ordre";
+            resolve(false);
+          }
+        };
+      });
+    }
+    async function miniGameAudio() {
+      miniGameContainer.innerHTML = `<p>Devine le mot entendu : 'Félicitation'</p><input id="audioGuess"><button id="audioBtn">Valider</button><div id="audioMsg"></div>`;
+      return new Promise(resolve => {
+        document.getElementById('audioBtn').onclick = () => {
+          const val = document.getElementById('audioGuess').value.toLowerCase();
+          if(val === 'félicitation' || val === 'felicitation') {
+            miniGameContainer.innerHTML = "";
+            resolve(true);
+          } else {
+            document.getElementById('audioMsg').textContent = "❌";
+            resolve(false);
+          }
+        };
+      });
+    }
+
+    function showRuleText(rule) {
+      ruleDiv.textContent = `${rule.emoji || ''} ${rule.text}`;
+    }
+    async function testRule(rule, input) {
+      if(rule.test) return rule.test(input);
+      if(rule.miniGame === "acrostiche") return miniGameAcrostiche(input);
+      if(rule.miniGame === "cesar") return miniGameCesar(input);
+      if(rule.miniGame === "image") return await miniGameImage();
+      if(rule.miniGame === "inclinaison") return await miniGameInclinaison();
+      if(rule.miniGame === "dragdrop") return await miniGameDragDrop();
+      if(rule.miniGame === "audio") return await miniGameAudio();
       return true;
     }
 
-    submitBtn.addEventListener("click", () => {
-      const input = answerInput.value.trim();
-      if (!input) {
-        messageDiv.textContent = "❗ Merci d'entrer une phrase.";
-        messageDiv.className = "error";
+    async function nextStep() {
+      attempts = 0;
+      if(step >= totalRules) {
+        messageDiv.textContent = "🎉 Bravo, tu as terminé !";
+        answerInput.disabled = true;
+        submitBtn.disabled = true;
+        stopChrono();
         return;
       }
+      showRuleText(rules[step]);
+      updateProgress();
+      answerInput.value = "";
+      miniGameContainer.innerHTML = "";
 
-      attempts++;
-
-      if (validateInput(input)) {
-        if (step < rules.length - 1) {
-          messageDiv.textContent = "✅ Règle validée ! Continue...";
-          messageDiv.className = "success";
-          step++;
-          showRules();
-        } else {
-          messageDiv.textContent = "🎉 Bravo, tu as réussi toutes les règles !";
-          messageDiv.className = "success";
-          submitBtn.disabled = true;
-        }
+      if(step === 14) {
+        bonusChallengeActive = true;
+        startChrono(180, () => {
+          if(!bonusSuccess) {
+            messageDiv.textContent = "⏰ Temps écoulé ! Essaie encore.";
+          }
+          bonusChallengeActive = false;
+        });
       } else {
-        messageDiv.textContent = "❌ Ta phrase ne respecte pas encore toutes les règles. Essaie encore.";
-        messageDiv.className = "error";
+        if(bonusChallengeActive) stopChrono();
       }
-      statsDiv.textContent = `Tentatives: ${attempts} - Règle actuelle: ${step + 1} / ${rules.length}`;
-    });
+    }
 
-    showRules();
+    submitBtn.onclick = async () => {
+      let input = answerInput.value.trim();
+      if(!input) return;
+      let ok = await testRule(rules[step], input);
+      if(ok) {
+        bonusSuccess = true;
+        step++;
+        await nextStep();
+        messageDiv.textContent = "✅ Bien joué !";
+      } else {
+        messageDiv.textContent = "❌ Essaie encore.";
+      }
+    };
+
+    startBtn.onclick = () => {
+      startBtn.disabled = true;
+      nextStep();
+    };
+
+    answerInput.addEventListener("keyup", e => { if(e.key === "Enter") submitBtn.click(); });
   </script>
 </body>
 </html>
