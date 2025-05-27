@@ -1,477 +1,472 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Jeu du Mot de Passe Progressif</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Jeu mot de passe cryptique</title>
+<style>
+  body {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    color: #e0e0e0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0; padding: 0; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  h1 {
+    margin: 1rem 0 0.5rem;
+    color: #ffd369;
+    text-shadow: 0 0 6px #f0c040;
+  }
+  #rulesContainer {
+    width: 90%;
+    max-width: 600px;
+    background: #0f3460;
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin: 10px 0 20px;
+    box-shadow: 0 0 15px #0f3460;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  .rule-item {
+    margin-bottom: 12px;
+    font-size: 1rem;
+    line-height: 1.3;
+    color: #cfd8dc;
+  }
+  .rule-item.current {
+    color: #f0c040;
+    font-weight: 700;
+  }
+  #inputArea {
+    display: flex;
+    width: 90%;
+    max-width: 600px;
+    margin-bottom: 15px;
+  }
+  #answerInput {
+    flex-grow: 1;
+    font-size: 1.1rem;
+    padding: 10px 12px;
+    border-radius: 8px 0 0 8px;
+    border: none;
+    outline: none;
+    box-shadow: 0 0 6px #f0c040 inset;
+    background: #16213e;
+    color: #fff;
+  }
+  #submitBtn {
+    background: #f0c040;
+    border: none;
+    padding: 10px 18px;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 0 10px #f0c040;
+    transition: background 0.3s ease;
+  }
+  #submitBtn:hover:not(:disabled) {
+    background: #ffde59;
+  }
+  #submitBtn:disabled {
+    background: #aaa;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  #message {
+    font-size: 1.2rem;
+    min-height: 2em;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  #message.success {
+    color: #4caf50;
+    text-shadow: 0 0 8px #4caf50;
+  }
+  #message.error {
+    color: #e74c3c;
+    text-shadow: 0 0 8px #e74c3c;
+  }
+  #stats {
+    font-size: 0.9rem;
+    color: #aaa;
+    margin-bottom: 30px;
+  }
+  /* Animation confetti */
+  .confetti-piece {
+    position: fixed;
+    width: 8px; height: 8px;
+    background-color: #f0c040;
+    opacity: 0.9;
+    z-index: 9999;
+    pointer-events: none;
+    animation-name: fallConfetti;
+    animation-timing-function: ease-out;
+    animation-iteration-count: 1;
+  }
+  @keyframes fallConfetti {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+  }
 
-    body {
-      font-family: 'Patrick Hand', cursive, sans-serif;
-      background: linear-gradient(135deg, #2a324b, #4b5671);
-      color: #eee;
-      margin: 0; padding: 20px;
-      min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center;
-    }
-
-    h1 {
-      margin-bottom: 10px;
-      text-shadow: 2px 2px 5px #0008;
-    }
-
-    #rules-container {
-      background: #1e2433dd;
-      border-radius: 8px;
-      box-shadow: inset 0 0 20px #0009;
-      max-height: 320px;
-      width: 90vw;
-      max-width: 700px;
-      overflow-y: auto;
-      padding: 15px 20px;
-      margin-bottom: 20px;
-    }
-
-    .rule-item {
-      margin-bottom: 6px;
-      padding: 6px 10px;
-      border-radius: 6px;
-      background: #3b4a73aa;
-      transition: background-color 0.3s;
-      font-size: 1.1em;
-    }
-
-    .rule-item.current {
-      background: #94c973cc;
-      color: #1b2e03;
-      font-weight: bold;
-      box-shadow: 0 0 8px 2px #a0d03dcc;
-    }
-
-    #input-container {
-      width: 90vw;
-      max-width: 700px;
-      display: flex;
-      flex-wrap: nowrap;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-
-    #answer-input {
-      flex-grow: 1;
-      font-size: 1.3em;
-      padding: 10px 15px;
-      border-radius: 8px;
-      border: none;
-      outline: none;
-      box-shadow: 0 0 10px #0008 inset;
-      transition: box-shadow 0.3s;
-    }
-    #answer-input:focus {
-      box-shadow: 0 0 14px #94c973cc inset;
-      background: #e9f0d1aa;
-      color: #1b2e03;
-    }
-
-    #submit-btn {
-      font-size: 1.2em;
-      padding: 0 20px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      background: #94c973cc;
-      color: #1b2e03;
-      font-weight: bold;
-      box-shadow: 0 0 12px #a0d03dcc;
-      transition: background-color 0.3s;
-    }
-    #submit-btn:hover:not(:disabled) {
-      background: #b0e576cc;
-    }
-    #submit-btn:disabled {
-      background: #66775588;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-
-    #message {
-      font-size: 1.3em;
-      margin-bottom: 10px;
-      min-height: 28px;
-      font-weight: bold;
-      text-align: center;
-    }
-    #message.error {
-      color: #ff5c5c;
-      text-shadow: 1px 1px 3px #900;
-    }
-    #message.success {
-      color: #a2d03d;
-      text-shadow: 1px 1px 3px #0a0;
-    }
-
-    #stats {
-      font-size: 1em;
-      margin-bottom: 15px;
-      color: #bbb;
-      user-select: none;
-    }
-
-    /* Clignotement rouge pour erreur */
-    @keyframes flashRed {
-      0%, 100% { background-color: transparent; }
-      50% { background-color: rgba(255, 0, 0, 0.5); }
-    }
-    .flash-error {
-      animation: flashRed 0.5s 3;
-    }
-
-    /* Contour vert pour succès */
-    .success-glow {
-      box-shadow: 0 0 25px 6px #32CD32 inset;
-      transition: box-shadow 0.5s ease;
-    }
-
-    /* Confettis */
-    .confetti-piece {
-      position: fixed;
-      top: 0;
-      width: 7px;
-      height: 10px;
-      opacity: 0.9;
-      z-index: 9999;
-      pointer-events: none;
-      animation-name: confetti-fall;
-      animation-timing-function: linear;
-      animation-iteration-count: 1;
-      transform-origin: center;
-    }
-
-    @keyframes confetti-fall {
-      0% {
-        transform: translateY(0) rotate(0deg);
-        opacity: 1;
-      }
-      100% {
-        transform: translateY(100vh) rotate(360deg);
-        opacity: 0;
-      }
-    }
-  </style>
+  /* Feedback écran */
+  body.error-flash {
+    animation: flashRed 0.3s 3;
+  }
+  @keyframes flashRed {
+    0%,100% { background-color: #1a1a2e; }
+    50% { background-color: #9b1c1c; }
+  }
+  body.success-flash {
+    box-shadow: 0 0 20px 6px #4caf50 inset;
+    animation: glowGreen 0.5s ease forwards;
+  }
+  @keyframes glowGreen {
+    from { box-shadow: none; }
+    to { box-shadow: 0 0 30px 10px #4caf50 inset; }
+  }
+</style>
 </head>
 <body>
-
-  <h1>Jeu du Mot de Passe Progressif</h1>
-
-  <div id="rules-container"></div>
-
-  <div id="input-container">
-    <input id="answer-input" type="text" autocomplete="off" placeholder="Tape ta réponse ici..." />
-    <button id="submit-btn">Valider</button>
+  <h1>Jeu mot de passe cryptique</h1>
+  <div id="rulesContainer"></div>
+  <div id="inputArea">
+    <input type="text" id="answerInput" autocomplete="off" placeholder="Écris ta réponse ici..." />
+    <button id="submitBtn">Valider</button>
   </div>
-
   <div id="message"></div>
-
-  <div id="stats">Essais : 0 | Temps écoulé : 0:00</div>
+  <div id="stats"></div>
 
 <script>
-  const rules = [
-    "La réponse doit commencer par une majuscule.",
-    "La réponse doit contenir au moins une voyelle accentuée (é, è, ê, etc.).",
-    "La réponse doit contenir au moins une apostrophe (').",
-    "La réponse doit contenir une virgule (,).",
-    "Le nombre de caractères (hors espaces) doit être entre 30 et 40.",
-    "La réponse doit contenir exactement 6 espaces.",
-    "Le premier mot doit contenir au moins 6 lettres.",
-    "La réponse doit se terminer par un point (.).",
-    "La réponse doit contenir au moins un mot de 2 lettres.",
-    "La réponse doit contenir au moins un mot avec un double 't'.",
-    "La réponse ne doit pas contenir la lettre 'z' ou 'Z'.",
-    "La réponse doit contenir au moins un mot commençant par 'j' minuscule.",
-    "La réponse doit contenir la lettre 'o' au moins 3 fois.",
-    "La réponse doit contenir au moins un mot avec une apostrophe qui commence par 't'.",
-    "La virgule doit être placée juste après le premier mot, sans espace.",
-    "Le nombre de lettres (hors espaces) doit être exactement 32.",
-    "Aucune majuscule autre que celle du premier et du dernier mot ne doit apparaître.",
-    "Le dernier mot doit commencer par un 'M' majuscule.",
-    "Le mot avec double 't' doit être placé avant le dernier mot.",
-    "Le mot 'je' doit apparaître dans la réponse.",
-    "Un mot avec une apostrophe doit apparaître juste après 'je'.",
-    "Le dernier mot doit être 'Médiapart'.",
-    "La réponse doit contenir le mot 'abonnement'.",
-    "La casse doit être respectée exactement (pas d'espaces superflus).",
-    "La phrase doit être exactement : Félicitations, je t'offre un abonnement Médiapart."
-  ];
+// Sons (usage Web Audio API simple)
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
+function playTone(freq, duration = 150) {
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  oscillator.type = 'triangle';
+  oscillator.frequency.value = freq;
+  oscillator.start();
+  gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration / 1000);
+  oscillator.stop(audioCtx.currentTime + duration / 1000);
+}
+
+function playSuccessSound() {
+  playTone(440, 200);
+  setTimeout(() => playTone(660, 150), 200);
+}
+function playErrorSound() {
+  playTone(150, 200);
+  setTimeout(() => playTone(100, 150), 200);
+}
+
+(function() {
   const finalPhrase = "Félicitations, je t'offre un abonnement Médiapart.";
+  const rules = [
+    "Ta réponse doit commencer par une majuscule.",
+    "Ta réponse doit contenir une apostrophe (').",
+    "Ta réponse doit contenir une virgule (,).",
+    "Ta réponse doit contenir exactement 6 mots.",
+    "Le premier mot doit avoir au moins 8 lettres.",
+    "La réponse doit contenir au moins 3 accents différents (é, è, ê, ë, à, â, ä, î, ï, ô, ö, ù, û, ü).",
+    "Le dernier mot doit commencer par la lettre M.",
+    "Le dernier mot doit faire au moins 9 lettres.",
+    "Ta réponse doit contenir au moins une contraction (comme \"t'\" ou \"d'\").",
+    "Il doit y avoir au moins un mot avec une double lettre consécutive au milieu (ex: 'abonnement').",
+    "Il doit y avoir au moins un mot qui finit par la lettre 't'.",
+    "La phrase doit contenir un pronom personnel singulier (je, tu, il, elle, on, me, te, se, lui).",
+    "Le nombre total de caractères (espaces inclus) doit être entre 37 et 43.",
+    "Chaque mot doit contenir au moins une voyelle.",
+    "Il doit y avoir exactement 5 espaces dans la phrase.",
+    "La phrase ne doit pas contenir la lettre 'z'.",
+    "La première lettre du troisième mot doit être 't'.",
+    "La phrase doit contenir la lettre 'o' au moins deux fois.",
+    "Le deuxième mot doit être plus court que le premier.",
+    "Le mot 'un' doit être présent dans la phrase.",
+    "Le dernier mot doit contenir au moins 3 voyelles.",
+    "Il doit y avoir au moins un mot avec un accent circonflexe (â, ê, î, ô, û).",
+    "La phrase ne doit pas commencer ni se terminer par un espace.",
+    "Le mot avant le dernier doit commencer par la lettre 'a'.",
+    "Le mot après la virgule doit commencer par 'j'.",
+    "La phrase finale doit correspondre exactement à la phrase à deviner."
+  ];
 
   let step = 0;
   let attempts = 0;
   let startTime = Date.now();
-  let timerInterval;
 
-  const rulesContainer = document.getElementById('rules-container');
-  const answerInput = document.getElementById('answer-input');
-  const submitBtn = document.getElementById('submit-btn');
-  const messageDiv = document.getElementById('message');
-  const statsDiv = document.getElementById('stats');
-  const body = document.body;
+  const rulesContainer = document.getElementById("rulesContainer");
+  const answerInput = document.getElementById("answerInput");
+  const submitBtn = document.getElementById("submitBtn");
+  const messageDiv = document.getElementById("message");
+  const statsDiv = document.getElementById("stats");
 
-  // Sons succès / erreur (tu peux remplacer les urls par les tiens)
-  const successSound = new Audio('https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg');
-  const errorSound = new Audio('https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg');
-
-  function playErrorEffect(){
-    body.classList.add('flash-error');
-    errorSound.currentTime = 0;
-    errorSound.play();
-    setTimeout(() => {
-      body.classList.remove('flash-error');
-    }, 1500);
+  // Fonctions utilitaires
+  function countWords(str) {
+    return str.trim().split(/\s+/).length;
+  }
+  function countLetter(str, letter) {
+    return (str.match(new RegExp(letter, "gi")) || []).length;
+  }
+  function containsApostrophe(str) {
+    return /'/.test(str);
+  }
+  function containsComma(str) {
+    return /,/.test(str);
+  }
+  function countAccents(str) {
+    const accents = str.match(/[éèêëàâäîïôöùûü]/gi) || [];
+    return new Set(accents.map(a => a.toLowerCase())).size;
+  }
+  function firstLetterIsUpper(str) {
+    return /^[A-ZÀÂÄÇÉÈÊËÏÎÔÖÙÛÜÆŒ]/.test(str);
+  }
+  function lastWord(str) {
+    const words = str.trim().split(/\s+/);
+    return words[words.length -1];
+  }
+  function firstWord(str) {
+    return str.trim().split(/\s+/)[0];
+  }
+  function hasContraction(str) {
+    return /\b\w'/.test(str);
+  }
+  function hasDoubleLetterMiddle(str) {
+    const words = str.trim().split(/\s+/);
+    for(let w of words) {
+      if(w.length >= 4) {
+        for(let i = 1; i < w.length-2; i++) {
+          if(w[i] === w[i+1]) return true;
+        }
+      }
+    }
+    return false;
+  }
+  function endsWithLetterT(str) {
+    return /\b\w*t\b/i.test(str);
+  }
+  function hasPersonalPronoun(str) {
+    return /\b(je|tu|il|elle|on|me|te|se|lui)\b/i.test(str);
+  }
+  function eachWordHasVowel(str) {
+    return str.trim().split(/\s+/).every(w => /[aeiouyàâäéèêëîïôöùûü]/i.test(w));
+  }
+  function hasExactSpaces(str, n) {
+    return (str.split(" ").length - 1) === n;
+  }
+  function noZLetter(str) {
+    return !/[zZ]/.test(str);
+  }
+  function thirdWordStartsWithT(str) {
+    const w = str.trim().split(/\s+/)[2];
+    return w && w[0].toLowerCase() === "t";
+  }
+  function hasAtLeastTwoOs(str) {
+    return countLetter(str, "o") >= 2;
+  }
+  function secondWordShorterThanFirst(str) {
+    const words = str.trim().split(/\s+/);
+    return words[1].length < words[0].length;
+  }
+  function containsWordUn(str) {
+    return /\bun\b/.test(str);
+  }
+  function lastWordHasMinVowels(str, min) {
+    const vowels = str.match(/[aeiouyàâäéèêëîïôöùûü]/gi) || [];
+    const last = lastWord(str);
+    const count = (last.match(/[aeiouyàâäéèêëîïôöùûü]/gi) || []).length;
+    return count >= min;
+  }
+  function hasWordWithCircumflex(str) {
+    return /[âêîôû]/i.test(str);
+  }
+  function noExtraSpacesEdges(str) {
+    return str.trim() === str;
+  }
+  function penultimateWordStartsWithA(str) {
+    const words = str.trim().split(/\s+/);
+    if(words.length < 2) return false;
+    return words[words.length - 2][0].toLowerCase() === "a";
+  }
+  function wordAfterCommaStartsWithJ(str) {
+    const afterComma = str.split(",")[1];
+    if(!afterComma) return false;
+    return afterComma.trim()[0].toLowerCase() === "j";
   }
 
-  function playSuccessEffect(){
-    body.classList.add('success-glow');
-    successSound.currentTime = 0;
-    successSound.play();
-    setTimeout(() => {
-      body.classList.remove('success-glow');
-    }, 1500);
-  }
+  function validateAnswer(ans) {
+    ans = ans.trim();
 
-  // Fonction utilitaire pour compter lettres hors espaces
-  function countLetters(text){
-    return text.replace(/ /g, '').length;
-  }
+    // Impose toutes les règles précédentes et la règle actuelle cumulativement :
+    // Chaque règle est validée uniquement si toutes les précédentes aussi sont vraies.
 
-  function getFirstWord(text){
-    const words = text.trim().split(/\s+/);
-    return words[0] || "";
-  }
-
-  function hasWordMinTwoLetters(text){
-    const words = text.trim().split(/\s+/);
-    return words.some(w => w.length >= 2);
-  }
-
-  function hasWordStartingJMin(text){
-    const words = text.trim().split(/\s+/);
-    return words.some(w => w[0] === 'j');
-  }
-
-  function checkAnswer(a) {
-    for(let i=0; i<=step; i++){
-      switch(i){
+    for(let i=0; i <= step; i++) {
+      switch(i) {
         case 0:
-          // commence par majuscule
-          if(!/^[A-ZÀÂÄÇÉÈÊËÏÎÔÖÙÛÜÆŒ]/.test(a)) return false;
+          if(!firstLetterIsUpper(ans)) return {ok:false, error:"La réponse doit commencer par une majuscule."};
           break;
         case 1:
-          // voyelle accentuée
-          if(!/[éèêëàâäîïôöùûü]/i.test(a)) return false;
+          if(!containsApostrophe(ans)) return {ok:false, error:"La réponse doit contenir une apostrophe (')."};
           break;
         case 2:
-          // apostrophe
-          if(!/\'/.test(a)) return false;
+          if(!containsComma(ans)) return {ok:false, error:"La réponse doit contenir une virgule (,)."};
           break;
         case 3:
-          // virgule
-          if(!/,/.test(a)) return false;
+          if(countWords(ans) !== 6) return {ok:false, error:"La phrase doit contenir exactement 6 mots."};
           break;
         case 4:
-          // longueur 30-40 lettres hors espaces
-          const len = countLetters(a);
-          if(len < 30 || len > 40) return false;
+          if(firstWord(ans).length < 8) return {ok:false, error:"Le premier mot doit avoir au moins 8 lettres."};
           break;
         case 5:
-          // 6 espaces
-          const spaces = (a.match(/ /g) || []).length;
-          if(spaces !== 6) return false;
+          if(countAccents(ans) < 3) return {ok:false, error:"La réponse doit contenir au moins 3 accents différents."};
           break;
         case 6:
-          // premier mot >= 6 lettres
-          const firstWord = getFirstWord(a);
-          if(firstWord.length < 6) return false;
+          if(lastWord(ans)[0].toLowerCase() !== "m") return {ok:false, error:"Le dernier mot doit commencer par la lettre M."};
           break;
         case 7:
-          // se termine par point
-          if(!/\.$/.test(a)) return false;
+          if(lastWord(ans).length < 9) return {ok:false, error:"Le dernier mot doit avoir au moins 9 lettres."};
           break;
         case 8:
-          // mot d'au moins 2 lettres (vérifié aussi step2)
-          if(!hasWordMinTwoLetters(a)) return false;
+          if(!hasContraction(ans)) return {ok:false, error:"La phrase doit contenir une contraction (ex: t' ou d')."};
           break;
         case 9:
-          // mot avec double 't'
-          if(!/\b\w*t{2}\w*\b/i.test(a)) return false;
+          if(!hasDoubleLetterMiddle(ans)) return {ok:false, error:"La phrase doit contenir un mot avec une double lettre au milieu."};
           break;
         case 10:
-          // pas de z ou Z
-          if(/[zZ]/.test(a)) return false;
+          if(!endsWithLetterT(ans)) return {ok:false, error:"Il doit y avoir au moins un mot qui finit par la lettre 't'."};
           break;
         case 11:
-          // mot commençant par j minuscule
-          if(!hasWordStartingJMin(a)) return false;
+          if(!hasPersonalPronoun(ans)) return {ok:false, error:"La phrase doit contenir un pronom personnel singulier."};
           break;
         case 12:
-          // lettre 'o' au moins 3 fois
-          if((a.match(/o/gi) || []).length < 3) return false;
+          if(ans.length < 37 || ans.length > 43) return {ok:false, error:"La phrase doit contenir entre 37 et 43 caractères."};
           break;
         case 13:
-          // mot avec apostrophe commençant par t
-          if(!/\b[tT]\'\w+\b/.test(a)) return false;
+          if(!eachWordHasVowel(ans)) return {ok:false, error:"Chaque mot doit contenir au moins une voyelle."};
           break;
         case 14:
-          // virgule juste après premier mot sans espace
-          if(!new RegExp(`^${firstWord},`).test(a)) return false;
+          if(!hasExactSpaces(ans, 5)) return {ok:false, error:"La phrase doit contenir exactement 5 espaces."};
           break;
         case 15:
-          // longueur lettres hors espaces = 32
-          if(countLetters(a) !== 32) return false;
+          if(!noZLetter(ans)) return {ok:false, error:"La phrase ne doit pas contenir la lettre 'z'."};
           break;
         case 16:
-          // majuscule uniquement 1ère lettre 1er et dernier mot
-          const words = a.trim().split(/\s+/);
-          for(let k=1; k<words.length-1; k++){
-            if(/[A-ZÀÂÄÇÉÈÊËÏÎÔÖÙÛÜÆŒ]/.test(words[k][0])) return false;
-          }
-          if(!/^[A-ZÀÂÄÇÉÈÊËÏÎÔÖÙÛÜÆŒ]/.test(words[0])) return false;
-          if(!/^[A-ZÀÂÄÇÉÈÊËÏÎÔÖÙÛÜÆŒ]/.test(words[words.length-1])) return false;
+          if(!thirdWordStartsWithT(ans)) return {ok:false, error:"La première lettre du troisième mot doit être 't'."};
           break;
         case 17:
-          // dernier mot commence par M majuscule
-          const lastWord = a.trim().split(/\s+/).slice(-1)[0];
-          if(!/^M/.test(lastWord)) return false;
+          if(!hasAtLeastTwoOs(ans)) return {ok:false, error:"La phrase doit contenir au moins deux 'o'."};
           break;
         case 18:
-          // mot avec double t avant dernier mot
-          const idxDoubleT = a.toLowerCase().split(/\s+/).findIndex(w => w.includes('tt'));
-          const idxLast = a.trim().split(/\s+/).length - 1;
-          if(idxDoubleT === -1 || idxDoubleT >= idxLast) return false;
+          if(!secondWordShorterThanFirst(ans)) return {ok:false, error:"Le deuxième mot doit être plus court que le premier."};
           break;
         case 19:
-          // mot 'je' présent
-          if(!/\bje\b/.test(a.toLowerCase())) return false;
+          if(!containsWordUn(ans)) return {ok:false, error:"La phrase doit contenir le mot 'un'."};
           break;
         case 20:
-          // mot avec apostrophe juste après 'je'
-          if(!/\bje t\'\w+/.test(a.toLowerCase())) return false;
+          if(!lastWordHasMinVowels(ans, 3)) return {ok:false, error:"Le dernier mot doit contenir au moins 3 voyelles."};
           break;
         case 21:
-          // dernier mot = Médiapart
-          if(!a.trim().endsWith("Médiapart.")) return false;
+          if(!hasWordWithCircumflex(ans)) return {ok:false, error:"La phrase doit contenir au moins un accent circonflexe."};
           break;
         case 22:
-          // contient 'abonnement'
-          if(!/\babonnement\b/.test(a.toLowerCase())) return false;
+          if(!noExtraSpacesEdges(ans)) return {ok:false, error:"La phrase ne doit pas commencer ni se terminer par un espace."};
           break;
         case 23:
-          // casse exacte, pas d'espaces superflus
-          if(a !== a.trim()) return false;
-          // on va vérifier que la casse correspond bien à la phrase finale sur la portion écrite
-          // on vérifie uniquement que l'input ne diffère pas de la portion de phrase avant le point final
-          // C'est compliqué ici, on fait simple : comparer à la phrase finale jusqu'à la longueur entrée
-          if(!finalPhrase.startsWith(a)) return false;
+          if(!penultimateWordStartsWithA(ans)) return {ok:false, error:"Le mot avant le dernier doit commencer par la lettre 'a'."};
           break;
         case 24:
-          // phrase exacte finale
-          if(a !== finalPhrase) return false;
+          if(!wordAfterCommaStartsWithJ(ans)) return {ok:false, error:"Le mot après la virgule doit commencer par la lettre 'j'."};
+          break;
+        case 25:
+          if(ans !== finalPhrase) return {ok:false, error:"Ce n'est pas encore la bonne phrase finale."};
           break;
       }
     }
-    return true;
+    return {ok:true};
   }
 
-  // Affichage dynamique
-  function showRules(){
-    rulesContainer.innerHTML = '';
-    for(let i=0; i<=step; i++){
-      const div = document.createElement('div');
-      div.className = 'rule-item' + (i === step ? ' current' : '');
+  function updateRulesDisplay() {
+    rulesContainer.innerHTML = "";
+    for(let i=0; i <= step; i++) {
+      const div = document.createElement("div");
+      div.className = "rule-item" + (i === step ? " current" : "");
       div.textContent = `Règle ${i+1} : ${rules[i]}`;
       rulesContainer.appendChild(div);
     }
-    // Scroll vers la règle courante
-    rulesContainer.scrollTop = rulesContainer.scrollHeight;
   }
 
-  // Stats timer + essais
-  function updateStats(){
-    attempts++;
-    const elapsedMs = Date.now() - startTime;
-    const minutes = Math.floor(elapsedMs / 60000);
-    const seconds = Math.floor((elapsedMs % 60000)/1000);
-    statsDiv.textContent = `Essais : ${attempts} | Temps écoulé : ${minutes}:${seconds.toString().padStart(2,'0')}`;
+  function updateStats() {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    statsDiv.textContent = `Essais : ${attempts} | Temps écoulé : ${elapsed}s | Étape : ${step + 1}/${rules.length}`;
   }
 
-  function createConfetti(){
-    const colors = ['#ff0', '#0ff', '#f0f', '#0f0', '#f00', '#00f', '#ffa500'];
-    const count = 150;
-    for(let i=0; i<count; i++){
+  function flashBody(type) {
+    if(type === "error") {
+      document.body.classList.add("error-flash");
+      playErrorSound();
+      setTimeout(() => document.body.classList.remove("error-flash"), 900);
+    } else if(type === "success") {
+      document.body.classList.add("success-flash");
+      playSuccessSound();
+      setTimeout(() => document.body.classList.remove("success-flash"), 1200);
+    }
+  }
+
+  // Confetti animation
+  function launchConfetti() {
+    const colors = ['#f0c040','#e94e77','#8cc8f8','#4caf50','#ff6f61'];
+    for(let i=0; i<150; i++) {
       const confetti = document.createElement('div');
-      confetti.className = 'confetti-piece';
+      confetti.classList.add('confetti-piece');
       confetti.style.backgroundColor = colors[Math.floor(Math.random()*colors.length)];
-      confetti.style.left = Math.random()*100 + 'vw';
-      confetti.style.animationDuration = (Math.random()*3 + 2) + 's';
-      confetti.style.animationDelay = (Math.random()*5) + 's';
+      confetti.style.left = Math.random() * window.innerWidth + 'px';
+      confetti.style.top = Math.random() * -50 + 'px';
+      confetti.style.animationDuration = 2000 + Math.random()*3000 + 'ms';
+      confetti.style.animationDelay = (Math.random()*1000) + 'ms';
       confetti.style.transform = `rotate(${Math.random()*360}deg)`;
       document.body.appendChild(confetti);
-      setTimeout(() => confetti.remove(), 7000);
+      setTimeout(() => confetti.remove(), 4000);
     }
   }
 
-  // Gestion du clic sur valider
-  submitBtn.addEventListener('click', () => {
-    const answer = answerInput.value.trim();
-    if(!answer) return;
-
-    if(checkAnswer(answer)){
-      playSuccessEffect();
-      messageDiv.textContent = "Correct !";
+  submitBtn.addEventListener("click", () => {
+    const answer = answerInput.value;
+    attempts++;
+    const validation = validateAnswer(answer);
+    if(validation.ok) {
+      flashBody("success");
+      messageDiv.textContent = `Règle ${step+1} validée ! 🎉`;
       messageDiv.className = "success";
       step++;
+      updateRulesDisplay();
       updateStats();
-      if(step >= rules.length){
-        messageDiv.innerHTML = `<strong>🎉 Bravo ! Vous avez complété toutes les règles ! 🎉</strong>`;
-        createConfetti();
+      answerInput.value = "";
+      if(step === rules.length) {
+        messageDiv.textContent = "🎊 Bravo, tu as trouvé la phrase finale ! 🎊";
+        launchConfetti();
         submitBtn.disabled = true;
         answerInput.disabled = true;
-        clearInterval(timerInterval);
-        showRules();
-        return;
       }
-      showRules();
-      answerInput.value = '';
-      answerInput.focus();
     } else {
-      messageDiv.textContent = "Erreur, essaie encore.";
+      flashBody("error");
+      messageDiv.textContent = validation.error;
       messageDiv.className = "error";
-      playErrorEffect();
-      updateStats();
-      answerInput.focus();
     }
   });
 
-  // Timer mise à jour chaque seconde
-  timerInterval = setInterval(() => {
-    const elapsedMs = Date.now() - startTime;
-    const minutes = Math.floor(elapsedMs / 60000);
-    const seconds = Math.floor((elapsedMs % 60000)/1000);
-    statsDiv.textContent = `Essais : ${attempts} | Temps écoulé : ${minutes}:${seconds.toString().padStart(2,'0')}`;
-  }, 1000);
-
-  // Initialisation
-  showRules();
-  answerInput.focus();
-
-  // Permet appuyer sur Enter dans input pour valider
-  answerInput.addEventListener('keydown', e => {
-    if(e.key === 'Enter'){
-      submitBtn.click();
-      e.preventDefault();
-    }
+  answerInput.addEventListener("keydown", e => {
+    if(e.key === "Enter") submitBtn.click();
   });
+
+  updateRulesDisplay();
+  updateStats();
+
+  // Timer update
+  setInterval(updateStats, 1000);
+})();
 </script>
 
 </body>
