@@ -5,41 +5,77 @@
   <title>Mot de passe impossible : Médiapart</title>
   <style>
     body {
-      background-color: #111;
+      background: linear-gradient(120deg, #0f2027, #203a43, #2c5364);
       color: white;
-      font-family: sans-serif;
-      padding: 20px;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 30px;
+      max-width: 600px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      font-size: 2em;
     }
     input, button {
       padding: 10px;
       font-size: 1rem;
       width: 100%;
-      margin: 10px 0;
+      margin: 15px 0;
+      border-radius: 5px;
+      border: none;
+    }
+    input {
+      background: #f4f4f4;
+      color: #333;
     }
     button {
-      background-color: #2ecc71;
+      background-color: #27ae60;
       color: white;
-      border: none;
       cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background-color: #2ecc71;
     }
     .rule {
-      margin: 5px 0;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.1);
+      transition: all 0.3s;
     }
     .valid {
-      color: #4caf50;
+      background: rgba(46, 204, 113, 0.3);
+      border-left: 5px solid #2ecc71;
     }
     .invalid {
-      color: #e74c3c;
+      background: rgba(231, 76, 60, 0.3);
+      border-left: 5px solid #e74c3c;
+    }
+    #successMessage {
+      font-size: 1.5rem;
+      text-align: center;
+      margin-top: 20px;
+      color: #f1c40f;
+    }
+    #confetti {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      pointer-events: none;
     }
   </style>
 </head>
 <body>
-  <h1>🔒 Devine le mot de passe !</h1>
-  <p>Tu dois trouver un seul mot qui respecte toutes les règles. Il y en a 25.</p>
+  <h1>🔐 Devine le mot de passe !</h1>
+  <p>Un seul mot valide toutes les règles... Saura-tu le trouver ?</p>
   <input type="text" id="passwordInput" placeholder="Entre ton mot ici...">
   <button onclick="checkPassword()">Vérifier</button>
   <ul id="rulesList"></ul>
-  <p id="successMessage" style="font-size: 1.5rem;"></p>
+  <p id="successMessage"></p>
+  <canvas id="confetti"></canvas>
 
   <script>
     const correctPassword = "Médiapart";
@@ -52,7 +88,7 @@
       { text: "Il commence par une majuscule.", test: w => /^[A-ZÉÈÀÂÊÎÔÛ]/.test(w) },
       { text: "Il contient au moins une lettre accentuée.", test: w => /[éèêëàâäîïôöûü]/i.test(w) },
       { text: "Il contient au moins une voyelle.", test: w => /[aeiouy]/i.test(w) },
-      { text: "Il contient une lettre 'é'.", test: w => w.includes("é") },
+      { text: "Il contient une lettre 'é'.", test: w => w.includes("\u00e9") },
       { text: "Il ne contient pas de chiffre.", test: w => !/\d/.test(w) },
       { text: "Il ne contient pas d’espace.", test: w => !/\s/.test(w) },
       { text: "La 4e lettre est un 'i'.", test: w => w[3]?.toLowerCase() === "i" },
@@ -75,39 +111,77 @@
       { text: "La première lettre est différente de la dernière.", test: w => w[0]?.toLowerCase() !== w[w.length - 1]?.toLowerCase() }
     ];
 
-    let passedRules = Array(rules.length).fill(false);
+    let currentRule = 0;
 
     function checkPassword() {
       const value = input.value.trim();
-      let allPassed = true;
-
       rulesList.innerHTML = "";
 
-      rules.forEach((rule, i) => {
+      let allPassed = true;
+      for (let i = 0; i <= currentRule; i++) {
         const li = document.createElement("li");
         li.className = "rule";
 
-        if (rule.test(value)) {
-          passedRules[i] = true;
+        if (rules[i].test(value)) {
           li.classList.add("valid");
         } else {
-          allPassed = false;
-          passedRules[i] = false;
           li.classList.add("invalid");
+          allPassed = false;
         }
 
-        li.textContent = `${i + 1}. ${rule.text}`;
+        li.textContent = `${i + 1}. ${rules[i].text}`;
         rulesList.appendChild(li);
-      });
+      }
 
-      if (allPassed && value === correctPassword) {
+      if (allPassed && currentRule < rules.length - 1) {
+        currentRule++;
+      } else if (allPassed && value === correctPassword) {
         successMessage.textContent = "🎉 Bravo ! Tu as trouvé le mot de passe : Médiapart !";
+        launchConfetti();
       } else {
         successMessage.textContent = "";
       }
     }
 
-    checkPassword(); // Affiche toutes les règles dès le début
+    function launchConfetti() {
+      const canvas = document.getElementById('confetti');
+      const confetti = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      let particles = Array.from({ length: 100 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 6 + 4,
+        d: Math.random() * 50,
+        color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+        tilt: Math.random() * 10 - 10
+      }));
+
+      function draw() {
+        confetti.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+          confetti.beginPath();
+          confetti.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          confetti.fillStyle = p.color;
+          confetti.fill();
+        });
+        update();
+      }
+
+      function update() {
+        particles.forEach(p => {
+          p.y += Math.cos(p.d) + 1 + p.r / 2;
+          p.x += Math.sin(p.d);
+          if (p.y > canvas.height) {
+            p.y = -10;
+            p.x = Math.random() * canvas.width;
+          }
+        });
+      }
+
+      setInterval(draw, 20);
+    }
   </script>
 </body>
 </html>
