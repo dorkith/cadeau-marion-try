@@ -2,181 +2,210 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<title>Mot de passe impossible corrigé</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Jeu du Mot de Passe Médiapart</title>
 <style>
   body {
-    font-family: Arial, sans-serif;
-    background: #0f0f23;
-    color: #f2f2f2;
-    max-width: 700px;
-    margin: 40px auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #121212;
+    color: #eee;
+    max-width: 600px;
+    margin: 30px auto;
     padding: 20px;
   }
   input, button {
-    font-size: 1.2rem;
-    padding: 10px;
     width: 100%;
-    box-sizing: border-box;
-    margin-top: 10px;
-    border-radius: 6px;
-    border: none;
-  }
-  input {
-    background: #1c1c3c;
-    color: white;
+    padding: 12px;
+    margin: 10px 0;
+    font-size: 1rem;
   }
   button {
-    background: #1f8a70;
+    background-color: #1e90ff;
+    border: none;
     color: white;
     cursor: pointer;
-    transition: background 0.3s;
+    border-radius: 5px;
   }
   button:disabled {
-    background: #444;
-    cursor: not-allowed;
-  }
-  button:hover:not(:disabled) {
-    background: #16664e;
-  }
-  ul {
-    padding-left: 20px;
-  }
-  li {
-    margin-bottom: 10px;
+    background-color: #555;
+    cursor: default;
   }
   .success {
     color: #4caf50;
-    margin-top: 15px;
+    font-weight: bold;
   }
   .error {
     color: #f44336;
-    margin-top: 15px;
+    font-weight: bold;
+  }
+  .mini-game {
+    margin: 20px 0;
+    padding: 10px;
+    background: #222;
+    border-radius: 6px;
+  }
+  .hidden { display: none; }
+  img {
+    max-width: 100%;
+    border-radius: 8px;
   }
 </style>
 </head>
 <body>
-  <h1>🧠 Le Mot de Passe Impossible</h1>
-  <h2>Respecte la règle actuelle pour avancer</h2>
 
-  <h3>Règle à respecter :</h3>
-  <ul id="ruleList"><li></li></ul>
+<h1>Jeu du Mot de Passe : Trouve la phrase contenant "Médiapart"</h1>
+<p id="instruction">Commence par entrer ta phrase :</p>
 
-  <input type="text" id="inputAnswer" placeholder="Tape ta phrase ici..." autocomplete="off" />
-  <button id="btnSubmit" disabled>Valider</button>
+<input type="text" id="inputPhrase" placeholder="Tape ta phrase ici..." autocomplete="off" />
+<button id="validateBtn">Valider</button>
 
-  <p id="message"></p>
-  <p id="stats"></p>
+<div id="message"></div>
+
+<div id="miniGameContainer" class="mini-game hidden"></div>
 
 <script>
+  const phraseFinale = "Félicitation, je t'offre un abonnement Médiapart.";
+
   const rules = [
     {
-      text: "La phrase commence par une majuscule.",
-      test: s => /^[A-ZÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/.test(s),
+      description: "La phrase commence par une majuscule.",
+      test: str => /^[A-ZÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/.test(str)
     },
     {
-      text: "La phrase contient exactement 6 mots.",
-      test: s => s.trim().split(/\s+/).length === 6,
+      description: "La phrase contient exactement 6 mots.",
+      test: str => str.trim().split(/\s+/).length === 6
     },
     {
-      text: "La phrase contient une virgule.",
-      test: s => /,/.test(s),
+      description: "La phrase contient une virgule.",
+      test: str => /,/.test(str)
     },
     {
-      text: "La phrase contient un pronom personnel (je, tu, il...).",
-      test: s => /\b(je|tu|il|elle|on|nous|vous|ils|elles)\b/i.test(s),
+      description: "La phrase contient le mot 'abonnement'.",
+      test: str => /\babonnement\b/i.test(str)
     },
     {
-      text: "La phrase contient une contraction (ex: t'offre, j'aime...).",
-      test: s => /\b(j'|t'|l'|n'|s')\w+/i.test(s),
-    },
-    {
-      text: "La phrase contient au moins 3 lettres accentuées.",
-      test: s => [...s].filter(c => "àâäéèêëïîôöùûüç".includes(c.toLowerCase())).length >= 3,
-    },
-    {
-      text: "Le mot juste après la virgule commence par un 'j' minuscule.",
-      test: s => {
-        const parts = s.split(',');
-        if(parts.length < 2) return false;
-        return parts[1].trim().startsWith('j');
-      }
-    },
-    {
-      text: "Le mot 'abonnement' est présent mais n'est pas le dernier mot.",
-      test: s => {
-        const words = s.toLowerCase().replace(/[.,!?]/g, '').split(/\s+/);
-        return words.includes("abonnement") && words[words.length-1] !== "abonnement";
-      }
-    },
-    {
-      text: "Le dernier mot commence par un 'M' majuscule.",
-      test: s => {
-        const words = s.trim().split(/\s+/);
-        return words[words.length-1].startsWith("M");
-      }
-    },
-    {
-      text: "La phrase exacte est : Félicitation, je t'offre un abonnement Médiapart.",
-      test: s => s === "Félicitation, je t'offre un abonnement Médiapart."
+      description: `La phrase finale est : "${phraseFinale}"`,
+      test: str => str === phraseFinale
     }
   ];
 
   let step = 0;
   let attempts = 0;
-  const startTime = Date.now();
 
-  const input = document.getElementById('inputAnswer');
-  const btn = document.getElementById('btnSubmit');
+  const inputPhrase = document.getElementById('inputPhrase');
+  const validateBtn = document.getElementById('validateBtn');
   const message = document.getElementById('message');
-  const ruleList = document.getElementById('ruleList').getElementsByTagName('li')[0];
-  const stats = document.getElementById('stats');
+  const miniGameContainer = document.getElementById('miniGameContainer');
+  const instruction = document.getElementById('instruction');
 
-  function updateRule() {
-    ruleList.textContent = rules[step].text;
+  // Mini-jeux pour chaque étape sauf la dernière
+  const miniGames = [
+    function miniGameEmoji(next) {
+      miniGameContainer.innerHTML = `
+        <p>Mini-jeu : Clique sur l'emoji 🎉 pour continuer.</p>
+        <button id="emojiBtn">🎉</button>
+      `;
+      miniGameContainer.classList.remove('hidden');
+      document.getElementById('emojiBtn').onclick = () => {
+        miniGameContainer.classList.add('hidden');
+        next();
+      };
+    },
+    function miniGameFlou(next) {
+      miniGameContainer.innerHTML = `
+        <p>Mini-jeu : Regarde cette image floutée. Devine ce que c'est, puis clique sur "J'ai deviné" pour continuer.</p>
+        <img src="https://picsum.photos/200/150?blur=8" alt="Image floutée" />
+        <button id="guessBtn">J'ai deviné</button>
+      `;
+      miniGameContainer.classList.remove('hidden');
+      document.getElementById('guessBtn').onclick = () => {
+        miniGameContainer.classList.add('hidden');
+        next();
+      };
+    },
+    function miniGameInclinaison(next) {
+      miniGameContainer.innerHTML = `
+        <p>Mini-jeu : Incline ton téléphone à gauche, puis clique sur "OK".</p>
+        <button id="inclineBtn">OK</button>
+      `;
+      miniGameContainer.classList.remove('hidden');
+      document.getElementById('inclineBtn').onclick = () => {
+        miniGameContainer.classList.add('hidden');
+        next();
+      };
+    },
+    function miniGameSecret(next) {
+      miniGameContainer.innerHTML = `
+        <p>Mini-jeu : Tape le mot secret <strong>MEDIAPART</strong> en majuscules puis clique sur valider.</p>
+        <input type="text" id="secretInput" placeholder="Tape MEDIAPART ici" autocomplete="off" />
+        <button id="secretBtn" disabled>Valider</button>
+      `;
+      miniGameContainer.classList.remove('hidden');
+
+      const secretInput = document.getElementById('secretInput');
+      const secretBtn = document.getElementById('secretBtn');
+
+      secretInput.addEventListener('input', () => {
+        secretBtn.disabled = secretInput.value !== "MEDIAPART";
+      });
+      secretBtn.onclick = () => {
+        miniGameContainer.classList.add('hidden');
+        next();
+      };
+    }
+  ];
+
+  function showMessage(text, isError = false) {
+    message.textContent = text;
+    message.className = isError ? 'error' : 'success';
   }
 
-  function updateStats() {
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    stats.textContent = `Tentatives : ${attempts} | Temps écoulé : ${elapsed} sec`;
+  function nextStep() {
+    step++;
+    if (step >= rules.length) {
+      showMessage("🎉 Tu as réussi à trouver la phrase finale parfaite ! Bravo ! 🎉");
+      inputPhrase.disabled = true;
+      validateBtn.disabled = true;
+      instruction.textContent = "Jeu terminé.";
+      return;
+    }
+    instruction.textContent = `Étape ${step + 1} : ${rules[step].description}`;
+    inputPhrase.value = "";
+    inputPhrase.focus();
   }
 
-  input.addEventListener('input', () => {
-    btn.disabled = input.value.trim().length === 0;
-    message.textContent = '';
-    message.className = '';
-  });
+  validateBtn.onclick = () => {
+    const val = inputPhrase.value.trim();
+    if (!val) {
+      showMessage("❌ Entre une phrase.", true);
+      return;
+    }
 
-  btn.addEventListener('click', () => {
-    const val = input.value.trim();
-    if(!val) return;
     attempts++;
 
-    if(rules[step].test(val)) {
-      step++;
-      if(step === rules.length) {
-        message.textContent = "🎉 Félicitations ! Tu as trouvé la phrase parfaite.";
-        message.className = "success";
-        btn.disabled = true;
-        input.disabled = true;
-        ruleList.textContent = "";
-      } else {
-        message.textContent = "✅ Règle validée, passe à la suivante !";
-        message.className = "success";
-        updateRule();
-      }
-    } else {
-      message.textContent = "❌ Cette phrase ne respecte pas la règle actuelle, essaie encore.";
-      message.className = "error";
+    if (!rules[step].test(val)) {
+      showMessage(`❌ La phrase ne respecte pas la règle : ${rules[step].description}`, true);
+      return;
     }
-    updateStats();
+
+    showMessage("✅ Règle validée ! Passons au mini-jeu...");
+
+    // Lancer mini-jeu si ce n'est pas la dernière étape
+    if (step < miniGames.length) {
+      miniGames[step](nextStep);
+    } else {
+      nextStep();
+    }
+  };
+
+  inputPhrase.addEventListener("keypress", e => {
+    if (e.key === "Enter") validateBtn.click();
   });
 
-  input.addEventListener('keypress', e => {
-    if(e.key === 'Enter' && !btn.disabled) btn.click();
-  });
-
-  updateRule();
-  updateStats();
+  // Démarrage
+  instruction.textContent = `Étape 1 : ${rules[0].description}`;
+  inputPhrase.focus();
 </script>
+
 </body>
 </html>
