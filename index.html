@@ -55,15 +55,27 @@
     ul {
       padding-left: 20px;
     }
+    .intro {
+      background: #1c1c3c;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>🔐 Jeu de mot de passe cryptique</h1>
+    <div class="intro">
+      <p>Bienvenue ! Ce jeu te propose de deviner une phrase secrète en validant progressivement une série de règles.</p>
+      <p>À chaque étape, une nouvelle contrainte s’ajoute. Tape ta réponse, puis clique sur <strong>Valider</strong>. Si la règle est respectée, tu passes à la suivante !</p>
+      <p>Le but final est d’écrire exactement : <em>Félicitation, je t'offre un abonnement Médiapart.</em></p>
+    </div>
+
     <div id="rulesContainer">
-      <h2>Règle en cours :</h2>
+      <h2>🧩 Règle en cours :</h2>
       <ul id="rulesList"></ul>
-      <h2>Règles validées :</h2>
+      <h2>✅ Règles validées :</h2>
       <ul id="completedList"></ul>
     </div>
 
@@ -105,10 +117,10 @@
         "Ne commence ni ne finit par un espace.",
         "L’avant-dernier mot commence par un A.",
         "Le mot juste après la virgule commence par un J.",
-        "C’est exactement : Félicitation, je t'offre un abbonement Médiapart."
+        "C’est exactement : Félicitation, je t'offre un abonnement Médiapart."
       ];
 
-      const finalPhrase = "Félicitation, je t'offre un abbonement Médiapart.";
+      const finalPhrase = "Félicitation, je t'offre un abonnement Médiapart.";
 
       let step = 0;
       let attempts = 0;
