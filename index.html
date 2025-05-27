@@ -65,7 +65,7 @@
 
   <script>
     const rules = [
-      { text: "Commence par une majuscule.", test: str => /^[A-ZÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/.test(str) },
+      { text: "La première lettre du mot est la 13ᵉ lettre de l'alphabet en majuscule (M).", test: str => str[0] === "M" },
       { text: "Contient exactement 9 lettres.", test: str => str.replace(/[^a-zA-ZÀ-ÿ]/g, '').length === 9 },
       { text: "Ne contient aucun chiffre.", test: str => !/\d/.test(str) },
       { text: "Contient une lettre accentuée en deuxième position.", test: str => /[àâäéèêëïîôöùûüç]/i.test(str[1]) },
@@ -92,6 +92,7 @@
         }},
       { text: "Contient une voyelle avec un accent aigu.", test: str => /[é]/i.test(str) },
       { text: "La lettre r est la 8e lettre.", test: str => str[7]?.toLowerCase() === 'r' },
+      { text: "Il doit y avoir un T juste après la lettre R.", test: str => /r(?=t)/i.test(str) },
       { text: "Le mot exact est : Médiapart", test: str => str === "Médiapart" }
     ];
 
