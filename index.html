@@ -68,7 +68,7 @@
       { text: "Commence par une majuscule.", test: str => /^[A-ZÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/.test(str) },
       { text: "Contient exactement 9 lettres.", test: str => str.replace(/[^a-zA-ZÀ-ÿ]/g, '').length === 9 },
       { text: "Ne contient aucun chiffre.", test: str => !/\d/.test(str) },
-      { text: "Contient au moins deux lettres accentuées.", test: str => [...str].filter(c => "àâäéèêëïîôöùûüç".includes(c.toLowerCase())).length >= 2 },
+      { text: "Contient au moins une lettre accentuée.", test: str => [...str].filter(c => "àâäéèêëïîôöùûüç".includes(c.toLowerCase())).length >= 1 },
       { text: "Ne contient pas la lettre z.", test: str => !/z/i.test(str) },
       { text: "Contient au moins une voyelle doublée (ex: aa, éé...).", test: str => /(aa|ee|ii|oo|uu|éé|èè|êê|àà)/i.test(str) },
       { text: "Ne se termine pas par une voyelle.", test: str => !/[aeiouyàâäéèêëïîôöùûü]$/i.test(str) },
