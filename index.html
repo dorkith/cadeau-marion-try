@@ -2,200 +2,158 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Mot de passe impossible : Médiapart</title>
+  <title>Jeu du Mot Interdit</title>
   <style>
     body {
-      background: linear-gradient(120deg, #0f2027, #203a43, #2c5364);
-      color: white;
-      font-family: 'Segoe UI', sans-serif;
-      padding: 30px;
-      max-width: 600px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0f0f23;
+      color: #f2f2f2;
+      padding: 20px;
+      text-align: center;
+    }
+    .container {
+      max-width: 700px;
       margin: auto;
     }
-    h1 {
-      text-align: center;
-      font-size: 2em;
-    }
     input, button {
-      padding: 10px;
-      font-size: 1rem;
       width: 100%;
-      margin: 15px 0;
-      border-radius: 5px;
-      border: none;
-    }
-    input {
-      background: #f4f4f4;
-      color: #333;
+      padding: 12px;
+      font-size: 1rem;
+      margin-top: 10px;
     }
     button {
-      background-color: #27ae60;
+      background: #1f8a70;
       color: white;
+      border: none;
       cursor: pointer;
-      transition: background 0.3s;
     }
-    button:hover {
-      background-color: #2ecc71;
+    .success { color: #4caf50; }
+    .error { color: #f44336; }
+    ul { padding-left: 0; list-style: none; }
+    li {
+      padding: 5px 0;
     }
-    .rule {
-      margin: 10px 0;
-      padding: 10px;
-      border-radius: 5px;
-      background: rgba(255, 255, 255, 0.1);
-      transition: all 0.3s;
+    .rule-passed {
+      color: #4caf50;
     }
-    .valid {
-      background: rgba(46, 204, 113, 0.3);
-      border-left: 5px solid #2ecc71;
+    .rule-failed {
+      color: #f44336;
     }
-    .invalid {
-      background: rgba(231, 76, 60, 0.3);
-      border-left: 5px solid #e74c3c;
+    .celebration {
+      font-size: 2em;
+      animation: pop 0.6s ease-out infinite alternate;
     }
-    #successMessage {
-      font-size: 1.5rem;
-      text-align: center;
-      margin-top: 20px;
-      color: #f1c40f;
-    }
-    #confetti {
-      position: fixed;
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-      pointer-events: none;
+    @keyframes pop {
+      from { transform: scale(1); }
+      to { transform: scale(1.1); }
     }
   </style>
 </head>
 <body>
-  <h1>🔐 Devine le mot de passe !</h1>
-  <p>Un seul mot valide toutes les règles... Saura-tu le trouver ?</p>
-  <input type="text" id="passwordInput" placeholder="Entre ton mot ici...">
-  <button onclick="checkPassword()">Vérifier</button>
-  <ul id="rulesList"></ul>
-  <p id="successMessage"></p>
-  <canvas id="confetti"></canvas>
+  <div class="container">
+    <h1>🔐 Devine le mot interdit</h1>
+    <h2>Chaque règle compte. Respecte-les toutes pour gagner !</h2>
+
+    <ul id="rulesList"></ul>
+
+    <input id="answerInput" type="text" placeholder="Tape ta proposition ici...">
+    <button id="submitBtn">Valider</button>
+
+    <p id="message"></p>
+    <p id="stats"></p>
+  </div>
 
   <script>
-    const correctPassword = "Médiapart";
-    const input = document.getElementById("passwordInput");
-    const rulesList = document.getElementById("rulesList");
-    const successMessage = document.getElementById("successMessage");
-
     const rules = [
-      { text: "Le mot contient exactement 9 lettres.", test: w => w.length === 9 },
-      { text: "Il commence par une majuscule.", test: w => /^[A-ZÉÈÀÂÊÎÔÛ]/.test(w) },
-      { text: "Il contient au moins une lettre accentuée.", test: w => /[éèêëàâäîïôöûü]/i.test(w) },
-      { text: "Il contient au moins une voyelle.", test: w => /[aeiouy]/i.test(w) },
-      { text: "Il contient une lettre 'é'.", test: w => w.includes("\u00e9") },
-      { text: "Il ne contient pas de chiffre.", test: w => !/\d/.test(w) },
-      { text: "Il ne contient pas d’espace.", test: w => !/\s/.test(w) },
-      { text: "La 4e lettre est un 'i'.", test: w => w[3]?.toLowerCase() === "i" },
-      { text: "Il ne contient aucun symbole spécial.", test: w => /^[A-Za-zéèêëàâäîïôöûü]+$/.test(w) },
-      { text: "Il contient un 'd'.", test: w => w.toLowerCase().includes("d") },
-      { text: "Il contient un 'm' ou un 'M'.", test: w => w.toLowerCase().includes("m") },
-      { text: "Il contient au moins 2 consonnes consécutives.", test: w => /[bcdfghjklmnpqrstvwxz]{2}/i.test(w) },
-{
-  text: "Contient deux lettres identiques non consécutives.",
-  test: str => {
-    const letters = {};
-    for (let i = 0; i < str.length; i++) {
-      const c = str[i].toLowerCase();
-      if (letters[c] !== undefined && letters[c] !== i - 1) {
-        return true;
-      }
-      letters[c] = i;
-    }
-    return false;
-  }
-}
-
-      { text: "Il se termine par une consonne.", test: w => /[^aeiouy]$/i.test(w) },
-      { text: "Il ne contient pas de majuscule sauf la première.", test: w => w.slice(1) === w.slice(1).toLowerCase() },
-      { text: "Il contient exactement 4 voyelles.", test: w => (w.match(/[aeiouyéèêëàâäîïôöûü]/gi) || []).length === 4 },
-      { text: "Il contient la lettre 'p'.", test: w => w.toLowerCase().includes("p") },
-      { text: "La 1ère et la 9e lettre sont différentes.", test: w => w[0]?.toLowerCase() !== w[8]?.toLowerCase() },
-      { text: "Il contient au moins une lettre parmi ['a', 'e', 'i', 'o', 'u'].", test: w => /[aeiou]/i.test(w) },
-      { text: "Il contient au moins une lettre parmi ['r', 's', 't', 'l', 'n'].", test: w => /[rstln]/i.test(w) },
-      { text: "Il contient exactement 3 lettres issues du mot 'art'.", test: w => (w.match(/[art]/gi) || []).length === 3 },
-      { text: "Il n’a pas deux lettres identiques côte à côte.", test: w => !/(.)\1/.test(w) },
-      { text: "Il contient plus de lettres qu'il y a de voyelles.", test: w => w.replace(/[^a-zéèêëàâäîïôöûü]/gi, "").length > (w.match(/[aeiouyéèêëàâäîïôöûü]/gi) || []).length },
-      { text: "La 8e lettre est 'r'.", test: w => w[7]?.toLowerCase() === 'r' },
-      { text: "La première lettre est différente de la dernière.", test: w => w[0]?.toLowerCase() !== w[w.length - 1]?.toLowerCase() }
+      { text: "Commence par une majuscule.", test: str => /^[A-ZÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/.test(str) },
+      { text: "Contient exactement 9 lettres.", test: str => str.replace(/[^a-zA-ZÀ-ÿ]/g, '').length === 9 },
+      { text: "Ne contient aucun chiffre.", test: str => !/\d/.test(str) },
+      { text: "Contient au moins deux lettres accentuées.", test: str => [...str].filter(c => "àâäéèêëïîôöùûüç".includes(c.toLowerCase())).length >= 2 },
+      { text: "Ne contient pas la lettre z.", test: str => !/z/i.test(str) },
+      { text: "Contient au moins une voyelle doublée (ex: aa, éé...).", test: str => /(aa|ee|ii|oo|uu|éé|èè|êê|àà)/i.test(str) },
+      { text: "Ne se termine pas par une voyelle.", test: str => !/[aeiouyàâäéèêëïîôöùûü]$/i.test(str) },
+      { text: "Contient la lettre i en 4ème position.", test: str => str[3]?.toLowerCase() === 'i' },
+      { text: "Contient la lettre a au moins deux fois.", test: str => (str.match(/a/gi) || []).length >= 2 },
+      { text: "Ne contient pas plus de 4 voyelles.", test: str => (str.match(/[aeiouyàâäéèêëïîôöùûü]/gi) || []).length <= 4 },
+      { text: "Contient au moins une lettre en double (non consécutive).", test: str => {
+        const seen = {};
+        for (let i = 0; i < str.length; i++) {
+          const c = str[i].toLowerCase();
+          if (seen[c] !== undefined && seen[c] !== i - 1) return true;
+          seen[c] = i;
+        }
+        return false;
+      }},
+      { text: "Contient au moins une lettre muette (comme le t final).", test: str => /t$/i.test(str) },
+      { text: "Ne contient pas deux lettres identiques à la suite.", test: str => !/(.)\1/.test(str) },
+      { text: "Contient un r après un a.", test: str => /a.*r/i.test(str) },
+      { text: "Ne commence pas par une voyelle.", test: str => !/^[aeiouyàâäéèêëïîôöùûü]/i.test(str) },
+      { text: "Contient une lettre en double non côte à côte.", test: str => {
+        const map = {};
+        for (let i = 0; i < str.length; i++) {
+          const c = str[i].toLowerCase();
+          if (map[c] !== undefined && i - map[c] > 1) return true;
+          map[c] = i;
+        }
+        return false;
+      }},
+      { text: "Contient un e accentué.", test: str => /[éèêë]/.test(str) },
+      { text: "La lettre r est la 8e lettre.", test: str => str[7]?.toLowerCase() === 'r' },
+      { text: "Le mot exact est : Médiapart", test: str => str === "Médiapart" }
     ];
 
-    let currentRule = 0;
+    let step = 0, attempts = 0;
+    const startTime = Date.now();
 
-    function checkPassword() {
-      const value = input.value.trim();
+    const answerInput = document.getElementById("answerInput");
+    const submitBtn = document.getElementById("submitBtn");
+    const messageDiv = document.getElementById("message");
+    const rulesList = document.getElementById("rulesList");
+    const statsDiv = document.getElementById("stats");
+
+    function showRules(input) {
       rulesList.innerHTML = "";
-
-      let allPassed = true;
-      for (let i = 0; i <= currentRule; i++) {
+      for (let i = 0; i <= step; i++) {
         const li = document.createElement("li");
-        li.className = "rule";
-
-        if (rules[i].test(value)) {
-          li.classList.add("valid");
-        } else {
-          li.classList.add("invalid");
-          allPassed = false;
-        }
-
-        li.textContent = `${i + 1}. ${rules[i].text}`;
+        const passed = rules[i].test(input);
+        li.className = passed ? "rule-passed" : "rule-failed";
+        li.textContent = rules[i].text;
         rulesList.appendChild(li);
       }
+    }
 
-      if (allPassed && currentRule < rules.length - 1) {
-        currentRule++;
-      } else if (allPassed && value === correctPassword) {
-        successMessage.textContent = "🎉 Bravo ! Tu as trouvé le mot de passe : Médiapart !";
-        launchConfetti();
+    submitBtn.addEventListener("click", () => {
+      const input = answerInput.value.trim();
+      if (!input) return;
+
+      attempts++;
+      const allPassed = rules.slice(0, step + 1).every(rule => rule.test(input));
+
+      if (allPassed) {
+        if (step < rules.length - 1) {
+          messageDiv.textContent = "✅ Bien joué, prochaine règle !";
+          messageDiv.className = "success";
+          step++;
+        } else {
+          messageDiv.innerHTML = '<span class="celebration">🎉 BRAVO ! Tu as deviné : MÉDIAPART 🎉</span>';
+          messageDiv.className = "success";
+          submitBtn.disabled = true;
+        }
       } else {
-        successMessage.textContent = "";
-      }
-    }
-
-    function launchConfetti() {
-      const canvas = document.getElementById('confetti');
-      const confetti = canvas.getContext('2d');
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-
-      let particles = Array.from({ length: 100 }, () => ({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        r: Math.random() * 6 + 4,
-        d: Math.random() * 50,
-        color: `hsl(${Math.random() * 360}, 100%, 50%)`,
-        tilt: Math.random() * 10 - 10
-      }));
-
-      function draw() {
-        confetti.clearRect(0, 0, canvas.width, canvas.height);
-        particles.forEach(p => {
-          confetti.beginPath();
-          confetti.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-          confetti.fillStyle = p.color;
-          confetti.fill();
-        });
-        update();
+        messageDiv.textContent = "❌ Certaines règles ne sont pas respectées.";
+        messageDiv.className = "error";
       }
 
-      function update() {
-        particles.forEach(p => {
-          p.y += Math.cos(p.d) + 1 + p.r / 2;
-          p.x += Math.sin(p.d);
-          if (p.y > canvas.height) {
-            p.y = -10;
-            p.x = Math.random() * canvas.width;
-          }
-        });
-      }
+      showRules(input);
+      statsDiv.textContent = `Tentatives : ${attempts} | Temps écoulé : ${Math.floor((Date.now() - startTime) / 1000)} sec`;
+    });
 
-      setInterval(draw, 20);
-    }
+    answerInput.addEventListener("keypress", e => {
+      if (e.key === "Enter") submitBtn.click();
+    });
+
+    // Affiche la première règle au démarrage
+    showRules("");
   </script>
 </body>
 </html>
