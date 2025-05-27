@@ -1,215 +1,84 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Password Game - Médiapart</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Le Jeu du Mot Mystère</title>
   <style>
-    body { font-family: sans-serif; padding: 2rem; background: #f5f5f5; }
-    h1 { font-size: 2rem; }
-    #rule { font-weight: bold; margin-bottom: 1rem; }
-    #inputZone { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
-    #message { min-height: 1rem; margin-top: 0.5rem; }
-    #progress { margin: 1rem 0; font-weight: bold; }
-    #miniGameContainer img.img-blur { filter: blur(5px); height: 100px; }
-    #dragList { list-style: none; padding: 0; display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    #dragList li { background: white; padding: 0.5rem; border: 1px solid #ccc; cursor: grab; }
-    li.dragging { opacity: 0.5; }
-    li.over { border-color: blue; }
+    body { font-family: Arial, sans-serif; padding: 2rem; background: #f5f5f5; }
+    #game-container { max-width: 600px; margin: auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    #rules { margin-bottom: 1rem; }
+    .rule { margin-bottom: 0.5rem; font-weight: bold; }
+    input[type="text"] { width: 100%; padding: 0.5rem; font-size: 1.2rem; margin-top: 1rem; }
+    button { padding: 0.5rem 1rem; font-size: 1rem; margin-top: 1rem; }
+    #result { margin-top: 1rem; font-weight: bold; color: green; }
   </style>
 </head>
 <body>
-  <h1>Password Game - Médiapart Edition</h1>
-  <div id="rule"></div>
-  <div id="inputZone">
-    <input type="text" id="answer" placeholder="Tape ta phrase ici...">
-    <button id="submit">Valider</button>
+  <div id="game-container">
+    <h1>🔐 Le Jeu du Mot Mystère</h1>
+    <div id="rules"></div>
+    <input type="text" id="phrase" placeholder="Tape ici ta phrase..." />
+    <button onclick="checkRules()">Vérifier</button>
+    <div id="result"></div>
   </div>
-  <div id="progress"></div>
-  <div id="message"></div>
-  <div id="miniGameContainer"></div>
-  <button id="start">Commencer</button>
 
   <script>
-    const rules = [
-      { text: "Ta phrase doit contenir le mot 'abonnement'.", test: input => input.toLowerCase().includes("abonnement"), emoji: "📩" },
-      { text: "Elle doit comporter au moins 3 mots.", test: input => input.trim().split(/\s+/).length >= 3, emoji: "🔤" },
-      { text: "Elle doit commencer par 'Félicitation'.", test: input => input.trim().startsWith("Félicitation"), emoji: "🎉" },
-      { text: "Elle doit contenir un mot en majuscules.", test: input => /\b[A-Z]{2,}\b/.test(input), emoji: "🔠" },
-      { text: "Elle doit contenir un emoji.", test: input => /\p{Emoji}/u.test(input), emoji: "😊" },
-      { text: "Un mot doit rimer avec 'art'.", test: input => input.split(/\s+/).some(m => /art$/.test(m.toLowerCase())), emoji: "🎵" },
-      { text: "Elle doit inclure la date du jour.", test: input => input.includes(new Date().toLocaleDateString('fr-FR')), emoji: "📅" },
-      { text: "Elle doit inclure un chiffre impair.", test: input => /\b[13579]\b/.test(input), emoji: "🔢" },
-      { text: "Mot acrostiche de 'abonnement'.", miniGame: "acrostiche", emoji: "🔡" },
-      { text: "Le mot 'offre' doit être chiffré en César +1.", miniGame: "cesar", emoji: "🔐" },
-      { text: "Reconnaissance d'image : quelle lettre est floutée ?", miniGame: "image", emoji: "🖼️" },
-      { text: "Incline ton téléphone vers la droite.", miniGame: "inclinaison", emoji: "📱" },
-      { text: "Réordonne les mots de la phrase correctement.", miniGame: "dragdrop", emoji: "🧩" },
-      { text: "Devine le mot prononcé.", miniGame: "audio", emoji: "🔊" },
-      { text: "Challenge chronométré : réponds en moins de 3 minutes !", test: () => true, emoji: "⏱️" }
+    const allRules = [
+      phrase => phrase.split(' ').length >= 4 || "La phrase doit contenir au moins 4 mots.",
+      phrase => phrase.length >= 20 || "La phrase doit faire au moins 20 caractères.",
+      phrase => phrase.includes(',') || "La phrase doit contenir une virgule.",
+      phrase => /[A-Z]/.test(phrase) || "La phrase doit contenir au moins une majuscule.",
+      phrase => phrase.endsWith('.') || "La phrase doit se terminer par un point.",
+      phrase => new Set(phrase.replace(/[^a-zA-Z]/g, '').toLowerCase()).size >= 10 || "La phrase doit utiliser au moins 10 lettres différentes.",
+      phrase => phrase.split(' ').every(word => word.length <= 12) || "Aucun mot ne doit dépasser 12 lettres.",
+      phrase => (phrase.match(/[aeiouyàâäéèêëîïôöùûüÿ]/gi)?.length || 0) >= 8 || "La phrase doit contenir au moins 8 voyelles.",
+      phrase => (phrase.match(/[!?]/g)?.length || 0) >= 1 || "La phrase doit contenir au moins un point d'exclamation ou un point d'interrogation.",
+      phrase => phrase.split(' ').filter((w, i, arr) => arr.indexOf(w) !== i).length === 0 || "Aucun mot ne doit être répété.",
     ];
 
-    let step = 0;
-    let attempts = 0;
-    let totalRules = rules.length;
-    let bonusChallengeActive = false;
-    let bonusSuccess = false;
-    let chronoTimeout;
+    let currentRuleIndex = 0;
 
-    const ruleDiv = document.getElementById('rule');
-    const answerInput = document.getElementById('answer');
-    const submitBtn = document.getElementById('submit');
-    const progressDiv = document.getElementById('progress');
-    const messageDiv = document.getElementById('message');
-    const miniGameContainer = document.getElementById('miniGameContainer');
-    const startBtn = document.getElementById('start');
+    function checkRules() {
+      const phrase = document.getElementById("phrase").value.trim();
+      const resultDiv = document.getElementById("result");
+      resultDiv.textContent = "";
+      const rulesDiv = document.getElementById("rules");
 
-    function updateProgress() {
-      progressDiv.textContent = `Règle ${step + 1} / ${totalRules}`;
-    }
-
-    function startChrono(seconds, callback) {
-      chronoTimeout = setTimeout(callback, seconds * 1000);
-    }
-    function stopChrono() {
-      clearTimeout(chronoTimeout);
-    }
-
-    function miniGameAcrostiche(input) {
-      const acro = input.trim().split(/\s+/).map(w => w[0]).join('').toLowerCase();
-      return acro.includes('abonnement');
-    }
-    function miniGameCesar(input) {
-      function cesar(m) {
-        return m.split('').map(c => c === 'z' ? 'a' : String.fromCharCode(c.charCodeAt(0) + 1)).join('');
+      for (let i = 0; i <= currentRuleIndex; i++) {
+        const rule = allRules[i];
+        const validation = rule(phrase);
+        if (typeof validation === "string") {
+          resultDiv.style.color = "red";
+          resultDiv.textContent = validation;
+          return;
+        }
       }
-      return input.toLowerCase().split(/\s+/).includes(cesar("offre"));
-    }
-    async function miniGameImage() {
-      miniGameContainer.innerHTML = `<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Fleur_de_lys_noir_et_blanc.svg/120px-Fleur_de_lys_noir_et_blanc.svg.png" class="img-blur"><input id="imgGuess"><button id="imgGuessBtn">Valider</button><div id="imgMsg"></div>`;
-      return new Promise(resolve => {
-        document.getElementById('imgGuessBtn').onclick = () => {
-          const val = document.getElementById('imgGuess').value.toUpperCase();
-          if(val === 'F') {
-            miniGameContainer.innerHTML = "";
-            resolve(true);
-          } else {
-            document.getElementById('imgMsg').textContent = "❌";
-            resolve(false);
-          }
-        };
-      });
-    }
-    async function miniGameInclinaison() {
-      miniGameContainer.innerHTML = `<button id="tiltRightBtn">Incliner à droite</button><div id="tiltMsg"></div>`;
-      return new Promise(resolve => {
-        document.getElementById('tiltRightBtn').onclick = () => {
-          miniGameContainer.innerHTML = "";
-          resolve(true);
-        };
-      });
-    }
-    async function miniGameDragDrop() {
-      const phrase = "Félicitation je t'offre un abonnement Médiapart";
-      const mots = phrase.split(' ').sort(() => Math.random() - 0.5);
-      miniGameContainer.innerHTML = `<ul id="dragList">${mots.map(w => `<li draggable="true">${w}</li>`).join('')}</ul><button id="validerDrag">Valider</button><div id="dragMsg"></div>`;
-      const dragList = document.getElementById('dragList');
-      let dragSrc;
-      dragList.querySelectorAll('li').forEach(li => {
-        li.ondragstart = e => { dragSrc = li; e.dataTransfer.setData('text', li.innerHTML); };
-        li.ondrop = e => { e.preventDefault(); [dragSrc.innerHTML, li.innerHTML] = [li.innerHTML, dragSrc.innerHTML]; };
-        li.ondragover = e => e.preventDefault();
-      });
-      return new Promise(resolve => {
-        document.getElementById('validerDrag').onclick = () => {
-          const ordre = [...dragList.children].map(li => li.textContent).join(' ');
-          if(ordre === phrase) {
-            miniGameContainer.innerHTML = "";
-            resolve(true);
-          } else {
-            document.getElementById('dragMsg').textContent = "❌ Mauvais ordre";
-            resolve(false);
-          }
-        };
-      });
-    }
-    async function miniGameAudio() {
-      miniGameContainer.innerHTML = `<p>Devine le mot entendu : 'Félicitation'</p><input id="audioGuess"><button id="audioBtn">Valider</button><div id="audioMsg"></div>`;
-      return new Promise(resolve => {
-        document.getElementById('audioBtn').onclick = () => {
-          const val = document.getElementById('audioGuess').value.toLowerCase();
-          if(val === 'félicitation' || val === 'felicitation') {
-            miniGameContainer.innerHTML = "";
-            resolve(true);
-          } else {
-            document.getElementById('audioMsg').textContent = "❌";
-            resolve(false);
-          }
-        };
-      });
-    }
 
-    function showRuleText(rule) {
-      ruleDiv.textContent = `${rule.emoji || ''} ${rule.text}`;
-    }
-    async function testRule(rule, input) {
-      if(rule.test) return rule.test(input);
-      if(rule.miniGame === "acrostiche") return miniGameAcrostiche(input);
-      if(rule.miniGame === "cesar") return miniGameCesar(input);
-      if(rule.miniGame === "image") return await miniGameImage();
-      if(rule.miniGame === "inclinaison") return await miniGameInclinaison();
-      if(rule.miniGame === "dragdrop") return await miniGameDragDrop();
-      if(rule.miniGame === "audio") return await miniGameAudio();
-      return true;
-    }
-
-    async function nextStep() {
-      attempts = 0;
-      if(step >= totalRules) {
-        messageDiv.textContent = "🎉 Bravo, tu as terminé !";
-        answerInput.disabled = true;
-        submitBtn.disabled = true;
-        stopChrono();
-        return;
-      }
-      showRuleText(rules[step]);
-      updateProgress();
-      answerInput.value = "";
-      miniGameContainer.innerHTML = "";
-
-      if(step === 14) {
-        bonusChallengeActive = true;
-        startChrono(180, () => {
-          if(!bonusSuccess) {
-            messageDiv.textContent = "⏰ Temps écoulé ! Essaie encore.";
-          }
-          bonusChallengeActive = false;
-        });
+      if (currentRuleIndex < allRules.length - 1) {
+        currentRuleIndex++;
+        updateRules();
+        resultDiv.style.color = "green";
+        resultDiv.textContent = "✅ Règle validée ! Continue...";
       } else {
-        if(bonusChallengeActive) stopChrono();
+        resultDiv.style.color = "green";
+        resultDiv.textContent = "🎉 Félicitations ! Tu as trouvé la bonne phrase !";
       }
     }
 
-    submitBtn.onclick = async () => {
-      let input = answerInput.value.trim();
-      if(!input) return;
-      let ok = await testRule(rules[step], input);
-      if(ok) {
-        bonusSuccess = true;
-        step++;
-        await nextStep();
-        messageDiv.textContent = "✅ Bien joué !";
-      } else {
-        messageDiv.textContent = "❌ Essaie encore.";
+    function updateRules() {
+      const rulesDiv = document.getElementById("rules");
+      rulesDiv.innerHTML = "";
+      for (let i = 0; i <= currentRuleIndex; i++) {
+        const ruleText = allRules[i]("TEST") === true ? `Règle ${i + 1}` : allRules[i]("TEST");
+        const div = document.createElement("div");
+        div.className = "rule";
+        div.textContent = `🧩 ${ruleText}`;
+        rulesDiv.appendChild(div);
       }
-    };
+    }
 
-    startBtn.onclick = () => {
-      startBtn.disabled = true;
-      nextStep();
-    };
-
-    answerInput.addEventListener("keyup", e => { if(e.key === "Enter") submitBtn.click(); });
+    updateRules();
   </script>
 </body>
 </html>
