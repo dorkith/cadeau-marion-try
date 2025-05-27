@@ -97,7 +97,7 @@
       { text: "Contient une voyelle avec un accent aigu.", test: str => /[é]/i.test(str) },
       { text: "La lettre r est la 8e lettre.", test: str => str[7]?.toLowerCase() === 'r' },
       { text: "Il doit y avoir un T juste après la lettre R.", test: str => /r(?=t)/i.test(str) },
-      { text: "Le mot exact est : Médiapart", test: str => str === "Médiapart" }
+      { text: "Le mot est un journal.", test: str => ["médiapart"].includes(str.toLowerCase()) }
     ];
 
     let step = 0, attempts = 0;
