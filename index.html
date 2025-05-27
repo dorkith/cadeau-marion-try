@@ -1,89 +1,119 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Le Mot de Passe Impossible</title>
+  <meta charset="UTF-8" />
+  <title>Jeu du mot de passe impossible</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #0f0f23;
-      color: #fff;
+      color: #f2f2f2;
       padding: 20px;
-    }
-    .container {
-      max-width: 800px;
+      max-width: 600px;
       margin: auto;
+    }
+    h1, h2, h3 {
+      text-align: center;
     }
     input, button {
       width: 100%;
       padding: 12px;
       font-size: 1rem;
       margin-top: 10px;
+      border: none;
+      border-radius: 4px;
     }
     button {
       background: #1f8a70;
       color: white;
-      border: none;
       cursor: pointer;
     }
     .success { color: #4caf50; }
     .error { color: #f44336; }
-    .hidden { display: none; }
-    .image-challenge, .tilt-challenge, .drag-container { margin-top: 20px; }
-    .drag-item { display: inline-block; padding: 10px; background: #333; margin: 5px; cursor: grab; }
-    .drop-zone { padding: 20px; border: 2px dashed #aaa; min-height: 50px; margin-top: 10px; }
+    ul { padding-left: 20px; }
+    #rulesList li.valid { text-decoration: line-through; color: #4caf50; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🧠 Le Mot de Passe Impossible</h1>
-    <h2>Respecte toutes les règles et surmonte les mini-jeux !</h2>
-    <h3>Règles débloquées :</h3>
-    <ul id="rulesList"></ul>
+  <h1>🧠 Le Mot de Passe Impossible</h1>
+  <h2>Respecte toutes les règles pour avancer</h2>
 
-    <input id="answerInput" type="text" placeholder="Tape ta proposition ici...">
-    <button id="submitBtn">Valider</button>
+  <h3>Règles à valider :</h3>
+  <ul id="rulesList"></ul>
 
-    <p id="message"></p>
-    <p id="stats"></p>
+  <input id="answerInput" type="text" placeholder="Tape ta proposition ici..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+  <button id="submitBtn">Valider</button>
 
-    <!-- Image Challenge -->
-    <div class="image-challenge hidden" id="imageChallenge">
-      <h3>🔍 Quel est cet objet ?</h3>
-      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Mona_Lisa_detail_face.jpg/240px-Mona_Lisa_detail_face.jpg" style="filter: blur(5px);">
-      <input id="imageAnswer" placeholder="Tape ta réponse ici...">
-      <button onclick="validateImageChallenge()">Valider</button>
-    </div>
-
-    <!-- Tilt Challenge -->
-    <div class="tilt-challenge hidden" id="tiltChallenge">
-      <h3>📱 Incline ton téléphone vers la droite pour continuer</h3>
-    </div>
-
-    <!-- Drag & Drop Challenge -->
-    <div class="drag-container hidden" id="dragChallenge">
-      <h3>🧩 Remets les mots dans le bon ordre</h3>
-      <div id="dragItems"></div>
-      <div class="drop-zone" id="dropZone"></div>
-      <button onclick="validateDrag()">Valider l'ordre</button>
-    </div>
-  </div>
+  <p id="message"></p>
+  <p id="stats"></p>
 
   <script>
     const rules = [
-      { text: "La phrase commence par une majuscule.", test: str => /^[A-Z]/.test(str) },
-      { text: "Elle contient exactement 6 mots.", test: str => str.trim().split(/\s+/).length === 6 },
-      { text: "Elle contient une virgule.", test: str => /,/.test(str) },
-      { text: "Un mot a exactement 4 lettres.", test: str => str.split(/\s+/).some(w => w.length === 4) },
-      { text: "Elle contient au moins 3 lettres accentuées.", test: str => (str.match(/[àâäéèêëïîôöùûüç]/gi) || []).length >= 3 },
-      { text: "Pas de répétition de mots.", test: str => {
-        let words = str.toLowerCase().split(/\s+/);
-        return new Set(words).size === words.length;
-      } },
-      { text: "Elle contient un emoji.", test: str => /\p{Emoji}/u.test(str) },
-      { text: "Elle contient un mot avec le son 'ch'.", test: str => /ch/i.test(str) },
-      { text: "Le mot final est en majuscules.", test: str => str.trim().split(/\s+/).pop() === str.trim().split(/\s+/).pop().toUpperCase() },
-      { text: "Phrase exacte attendue.", test: str => str === "Félicitation, je t'offre un abonnement Médiapart." }
+      {
+        text: "La phrase commence par une majuscule.",
+        test: str => /^[A-ZÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/.test(str.trim())
+      },
+      {
+        text: "La phrase contient exactement 6 mots.",
+        test: str => str.trim().split(/\s+/).length === 6
+      },
+      {
+        text: "La phrase contient une virgule.",
+        test: str => /,/.test(str)
+      },
+      {
+        text: "Un mot de la phrase a exactement 4 lettres.",
+        test: str => str.trim().split(/\s+/).some(w => w.replace(/[.,!?:;]/g,'').length === 4)
+      },
+      {
+        text: "La phrase contient au moins 3 lettres accentuées.",
+        test: str => {
+          const accents = str.match(/[àâäéèêëïîôöùûüç]/gi);
+          return accents && accents.length >= 3;
+        }
+      },
+      {
+        text: "Aucun mot n'est répété.",
+        test: str => {
+          const words = str.toLowerCase().match(/\b\w+\b/g);
+          return words && (new Set(words)).size === words.length;
+        }
+      },
+      {
+        text: "La phrase contient au moins un emoji.",
+        test: str => {
+          // Emoji regex simplifiée
+          return /[\u231A-\uD83E\uDDFF]/.test(str);
+        }
+      },
+      {
+        text: "Le premier mot après la virgule commence par une lettre entre A et M.",
+        test: str => {
+          const parts = str.split(',');
+          if(parts.length < 2) return false;
+          const firstWordAfterComma = parts[1].trim().split(/\s+/)[0];
+          return /^[A-Ma-m]/.test(firstWordAfterComma);
+        }
+      },
+      {
+        text: "Le dernier mot contient entre 5 et 10 lettres.",
+        test: str => {
+          const lastWord = str.trim().split(/\s+/).pop().replace(/[.,!?:;]/g,'');
+          return lastWord.length >=5 && lastWord.length <= 10;
+        }
+      },
+      {
+        text: "Tous les mots commencent par une lettre différente quand triés alphabétiquement.",
+        test: str => {
+          const words = str.toLowerCase().match(/\b\w+\b/g);
+          if (!words) return false;
+          const sorted = words.slice().sort();
+          for(let i = 1; i < sorted.length; i++) {
+            if(sorted[i][0] === sorted[i-1][0]) return false;
+          }
+          return true;
+        }
+      }
     ];
 
     let step = 0;
@@ -96,118 +126,48 @@
     const rulesList = document.getElementById("rulesList");
     const statsDiv = document.getElementById("stats");
 
-    function showRules() {
+    function updateRulesList() {
       rulesList.innerHTML = "";
-      for (let i = 0; i <= step; i++) {
+      rules.forEach((rule, index) => {
         const li = document.createElement("li");
-        li.textContent = rules[i].text;
+        li.textContent = rule.text;
+        if(index < step) li.classList.add("valid");
         rulesList.appendChild(li);
-      }
+      });
+    }
+
+    function testCurrentRule(input) {
+      return rules[step].test(input);
     }
 
     submitBtn.addEventListener("click", () => {
       const input = answerInput.value.trim();
-      if (!input) return;
+      if(!input) return;
 
       attempts++;
 
-      const allPassed = rules.slice(0, step + 1).every(rule => rule.test(input));
-
-      if (allPassed) {
+      if(testCurrentRule(input)) {
+        messageDiv.textContent = `✅ Règle ${step + 1} validée !`;
+        messageDiv.className = "success";
         step++;
-        if (step < rules.length) {
-          messageDiv.textContent = "✅ Règle validée.";
-          messageDiv.className = "success";
-          triggerMiniGame(step);
-          showRules();
-        } else {
-          messageDiv.textContent = "🎉 Phrase finale correcte ! Bien joué !";
-          messageDiv.className = "success";
+        if(step === rules.length) {
+          messageDiv.textContent = "🎉 Félicitations ! Tu as validé toutes les règles.";
           submitBtn.disabled = true;
+          answerInput.disabled = true;
         }
+        updateRulesList();
       } else {
-        messageDiv.textContent = "❌ Essaie encore, certaines règles ne sont pas respectées.";
+        messageDiv.textContent = `❌ La phrase ne respecte pas la règle ${step + 1} : "${rules[step].text}"`;
         messageDiv.className = "error";
       }
-
-      statsDiv.textContent = `Tentatives : ${attempts} | Temps écoulé : ${Math.floor((Date.now() - startTime) / 1000)} sec`;
+      statsDiv.textContent = `Tentatives : ${attempts} | Temps écoulé : ${Math.floor((Date.now() - startTime)/1000)} sec`;
     });
 
     answerInput.addEventListener("keypress", e => {
-      if (e.key === "Enter") submitBtn.click();
+      if(e.key === "Enter") submitBtn.click();
     });
 
-    showRules();
-
-    // Mini-jeux :
-    function triggerMiniGame(step) {
-      document.getElementById("imageChallenge").classList.add("hidden");
-      document.getElementById("tiltChallenge").classList.add("hidden");
-      document.getElementById("dragChallenge").classList.add("hidden");
-
-      if (step === 3) document.getElementById("imageChallenge").classList.remove("hidden");
-      if (step === 5) document.getElementById("tiltChallenge").classList.remove("hidden");
-      if (step === 7) setupDragDrop();
-    }
-
-    function validateImageChallenge() {
-      const val = document.getElementById("imageAnswer").value.trim().toLowerCase();
-      if (val.includes("mona") || val.includes("lisa")) {
-        document.getElementById("imageChallenge").classList.add("hidden");
-        alert("Bonne réponse ! Continue.");
-      } else {
-        alert("Incorrect. Indice : c'est un tableau célèbre.");
-      }
-    }
-
-    window.addEventListener("deviceorientation", event => {
-      const gamma = event.gamma;
-      if (document.getElementById("tiltChallenge").classList.contains("hidden")) return;
-      if (gamma > 30) {
-        document.getElementById("tiltChallenge").classList.add("hidden");
-        alert("Inclinaison détectée ! Tu peux continuer.");
-      }
-    });
-
-    function setupDragDrop() {
-      const words = ["abonnement", "je", "offre", "Médiapart", "t'", "un"];
-      const shuffled = words.sort(() => Math.random() - 0.5);
-      const container = document.getElementById("dragItems");
-      const dropZone = document.getElementById("dropZone");
-      container.innerHTML = "";
-      dropZone.innerHTML = "";
-
-      shuffled.forEach(word => {
-        const div = document.createElement("div");
-        div.className = "drag-item";
-        div.draggable = true;
-        div.textContent = word;
-        div.addEventListener("dragstart", e => e.dataTransfer.setData("text/plain", word));
-        container.appendChild(div);
-      });
-
-      dropZone.addEventListener("dragover", e => e.preventDefault());
-      dropZone.addEventListener("drop", e => {
-        e.preventDefault();
-        const data = e.dataTransfer.getData("text/plain");
-        const div = document.createElement("div");
-        div.className = "drag-item";
-        div.textContent = data;
-        dropZone.appendChild(div);
-      });
-
-      document.getElementById("dragChallenge").classList.remove("hidden");
-    }
-
-    function validateDrag() {
-      const result = Array.from(document.querySelectorAll("#dropZone .drag-item")).map(div => div.textContent).join(" ");
-      if (result.toLowerCase() === "je t' offre un abonnement médiapart") {
-        document.getElementById("dragChallenge").classList.add("hidden");
-        alert("Ordre correct ! Continue le jeu.");
-      } else {
-        alert("Ordre incorrect, recommence.");
-      }
-    }
+    updateRulesList();
   </script>
 </body>
 </html>
