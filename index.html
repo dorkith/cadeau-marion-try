@@ -70,7 +70,17 @@
       { text: "Ne contient aucun chiffre.", test: str => !/\d/.test(str) },
       { text: "Contient au moins une lettre accentuée.", test: str => [...str].filter(c => "àâäéèêëïîôöùûüç".includes(c.toLowerCase())).length >= 1 },
       { text: "Ne contient pas la lettre z.", test: str => !/z/i.test(str) },
-      { text: "Contient au moins une voyelle doublée (ex: aa, éé...).", test: str => /(aa|ee|ii|oo|uu|éé|èè|êê|àà)/i.test(str) },
+      { text: "Contient au moins deux voyelles similaires (ex: a et a, é et é, même non consécutives).", test: str => {
+        const vowels = 'aeiouyàâäéèêëïîôöùûü';
+        const map = {};
+        for (const char of str.toLowerCase()) {
+          if (vowels.includes(char)) {
+            map[char] = (map[char] || 0) + 1;
+            if (map[char] >= 2) return true;
+          }
+        }
+        return false;
+      }},
       { text: "Ne se termine pas par une voyelle.", test: str => !/[aeiouyàâäéèêëïîôöùûü]$/i.test(str) },
       { text: "Contient la lettre i en 4ème position.", test: str => str[3]?.toLowerCase() === 'i' },
       { text: "Contient la lettre a au moins deux fois.", test: str => (str.match(/a/gi) || []).length >= 2 },
