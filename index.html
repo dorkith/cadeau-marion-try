@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Jeu du Mot Interdit</title>
   <style>
     body {
@@ -26,12 +26,21 @@
       color: white;
       border: none;
       cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:disabled {
+      background-color: #555;
+      cursor: not-allowed;
     }
     .success { color: #4caf50; }
     .error { color: #f44336; }
-    ul { padding-left: 0; list-style: none; }
+    ul { padding-left: 0; list-style: none; text-align: left; }
     li {
       padding: 5px 0;
+      font-size: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     .rule-passed {
       color: #4caf50;
@@ -39,9 +48,26 @@
     .rule-failed {
       color: #f44336;
     }
+    .rule-icon {
+      margin-left: 10px;
+      font-weight: bold;
+      flex-shrink: 0;
+      font-size: 1.3rem;
+    }
+    #progress {
+      font-size: 1.1rem;
+      margin-bottom: 15px;
+      color: #1f8a70;
+      font-weight: 600;
+      text-align: left;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
     .celebration {
       font-size: 2em;
       animation: pop 0.6s ease-out infinite alternate;
+      margin-top: 20px;
     }
     @keyframes pop {
       from { transform: scale(1); }
@@ -63,12 +89,13 @@
 <body>
   <div class="container">
     <h1>🔐 Devine le mot interdit</h1>
+    <div id="progress">Règles validées : 0 / 1</div>
     <h2>Chaque règle compte. Respecte-les toutes pour gagner !</h2>
 
     <ul id="rulesList"></ul>
 
-    <input id="answerInput" type="text" placeholder="Tape ta proposition ici...">
-    <button id="submitBtn">Valider</button>
+    <input id="answerInput" type="text" placeholder="Tape ta proposition ici..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" />
+    <button id="submitBtn" disabled>Valider</button>
 
     <p id="message"></p>
     <p id="stats"></p>
@@ -119,16 +146,26 @@
     const messageDiv = document.getElementById("message");
     const rulesList = document.getElementById("rulesList");
     const statsDiv = document.getElementById("stats");
+    const progressDiv = document.getElementById("progress");
 
     function showRules(input) {
       rulesList.innerHTML = "";
+      let passedCount = 0;
       for (let i = 0; i <= step; i++) {
         const li = document.createElement("li");
         const passed = rules[i].test(input);
         li.className = passed ? "rule-passed" : "rule-failed";
         li.textContent = rules[i].text;
+
+        const icon = document.createElement("span");
+        icon.className = "rule-icon";
+        icon.textContent = passed ? "✔️" : "❌";
+        li.appendChild(icon);
+
         rulesList.appendChild(li);
+        if (passed) passedCount++;
       }
+      progressDiv.textContent = `Règles validées : ${passedCount} / ${step + 1}`;
     }
 
     submitBtn.addEventListener("click", () => {
@@ -143,6 +180,9 @@
           messageDiv.textContent = "✅ Bien joué, prochaine règle !";
           messageDiv.className = "success";
           step++;
+          showRules(input);
+          answerInput.value = "";
+          submitBtn.disabled = true;
         } else {
           let finalMessage = '<span class="celebration">🎉 BRAVO ! Tu as deviné : MÉDIAPART 🎉</span>';
 
@@ -155,6 +195,7 @@
           messageDiv.innerHTML = finalMessage;
           messageDiv.className = "success";
           submitBtn.disabled = true;
+          answerInput.disabled = true;
         }
       } else {
         messageDiv.textContent = "❌ Certaines règles ne sont pas respectées.";
@@ -165,8 +206,15 @@
       statsDiv.textContent = `Tentatives : ${attempts} | Temps écoulé : ${Math.floor((Date.now() - startTime) / 1000)} sec`;
     });
 
+    answerInput.addEventListener("input", () => {
+      submitBtn.disabled = answerInput.value.trim() === "";
+      // On peut aussi remettre le message vide quand on tape
+      messageDiv.textContent = "";
+      messageDiv.className = "";
+    });
+
     answerInput.addEventListener("keypress", e => {
-      if (e.key === "Enter") submitBtn.click();
+      if (e.key === "Enter" && !submitBtn.disabled) submitBtn.click();
     });
 
     // Affiche la première règle au démarrage
